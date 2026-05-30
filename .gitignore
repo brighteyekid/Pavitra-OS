@@ -1,6 +1,13 @@
 # Binaries and generated artifacts — never commit these
 *.iso
 *.iso.old
+
+# live-build generated metadata (not source)
+pavitra-os/pavitra-build/auto/
+pavitra-os/pavitra-build/binary.*
+pavitra-os/pavitra-build/chroot.*
+pavitra-os/pavitra-build/includes.chroot/
+pavitra-os/pavitra-build/local/
 *.qcow2
 *.img
 *.squashfs

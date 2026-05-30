@@ -1,152 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pavitra OS</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
-    <!-- GSAP -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pavitra OS — Run Everything. Pure Linux.</title>
+<meta name="description" content="A custom Linux distribution built on Debian 12 that runs Windows, macOS, and Debian applications — on one machine, with complete control.">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- CRAZY LOADING SCREEN -->
-    <div class="loader-wrapper">
-        <div class="loader-geometry">
-            <div class="loader-dot"></div>
-            <div class="loader-line"></div>
-            <div class="loader-circle"></div>
+<div id="loader">
+    <canvas id="lc"></canvas>
+    <div id="loader-inner">
+        <img src="logo.png" alt="" id="llogo">
+        <div id="ltitle">
+            <div class="lline"><span>PAVITRA</span></div>
+            <div class="lline os-line"><span>OS</span></div>
         </div>
-        <div class="loader-text">INITIALIZING CORE</div>
+        <p id="lsub">Run Everything. Pure Linux.</p>
     </div>
+    <div id="lprogress"><div id="lbar"></div></div>
+</div>
 
-    <!-- HERO SECTION -->
-    <main class="hero-container">
-        <div class="hero-background"></div>
-        <div class="hero-content">
-            <img src="../pavitra-os/assets/logo.png" alt="Pavitra OS Logo" class="hero-logo">
-            <h1 class="hero-title">PAVITRA OS</h1>
-            <p class="hero-subtitle">Run Everything. Pure Linux.</p>
-            
-            <div class="hero-actions">
-                <a href="#" class="btn btn-primary">Download v1.0</a>
-                <a href="#" class="btn btn-secondary">Read Documentation</a>
-            </div>
-            
-            <div class="hero-features">
-                <div class="feature">
-                    <span class="feature-val">4</span>
-                    <span class="feature-lbl">Ecosystems</span>
-                </div>
-                <div class="feature-divider"></div>
-                <div class="feature">
-                    <span class="feature-val">0</span>
-                    <span class="feature-lbl">Bloat</span>
-                </div>
-                <div class="feature-divider"></div>
-                <div class="feature">
-                    <span class="feature-val">100%</span>
-                    <span class="feature-lbl">Control</span>
-                </div>
+<div id="site">
+
+    <header id="nav">
+        <div class="nav-left">
+            <img src="logo.png" alt="Pavitra OS" class="nl">
+            <span class="nw">PAVITRA OS</span>
+        </div>
+        <nav class="nav-right">
+            <a href="#system">System</a>
+            <a href="#compatibility">Compat</a>
+            <a href="#features">Features</a>
+            <a href="https://github.com/brighteyekid/Pavitra-OS" target="_blank" rel="noopener" class="nav-gh">GitHub</a>
+        </nav>
+    </header>
+
+    <section id="hero">
+        <div id="hero-bg"></div>
+        <div id="hero-content">
+            <p class="eyebrow">v1.0 — Debian 12 Bookworm</p>
+            <h1 id="hero-h1">
+                <div class="lw"><div class="li">Run</div></div>
+                <div class="lw"><div class="li">Everything.</div></div>
+                <div class="lw accent-lw"><div class="li">Pure Linux.</div></div>
+            </h1>
+            <p id="hero-desc">A custom Linux distribution engineered to run Windows, macOS, and Debian applications — side by side, without compromise, on one machine you fully control.</p>
+            <div id="hero-ctas">
+                <a href="https://github.com/brighteyekid/Pavitra-OS/releases" class="btn-p">Download v1.0</a>
+                <a href="https://github.com/brighteyekid/Pavitra-OS" class="btn-s" target="_blank" rel="noopener">View Source</a>
             </div>
         </div>
-    </main>
-
-    <!-- CONTENT TO ENABLE SCROLLING -->
-    <section class="dummy-content">
-        <h2>Unrestricted Performance</h2>
-        <p>Windows. macOS. Linux. Run it all on a foundation built for speed.</p>
+        <div id="scroll-hint"><div class="sh-bar"></div><span>scroll</span></div>
     </section>
 
-    <script>
-        // GSAP Crazy Loader Animation
-        const tl = gsap.timeline();
+    <section id="system">
+        <div class="sc">
+            <div class="col-a"><p class="sl" data-rl>The System</p></div>
+            <div class="col-b">
+                <p class="s-lg" data-sr>Built on Debian 12 Bookworm with a 6.1 kernel. Pavitra OS is not a fork — it is a fully assembled live operating system that ships four complete application runtimes as first-class citizens.</p>
+                <div class="div" data-lr></div>
+                <p class="s-md" data-sr>The Wine compatibility layer handles Windows executables. Darling reimplements the macOS Darwin API without any Apple code. Native Debian packages and AppImages complete the fourth ecosystem. All four run simultaneously with no configuration required.</p>
+                <div class="sys-stats">
+                    <div class="ss"><span class="ss-n" data-count="4">0</span><span class="ss-l">Application ecosystems</span></div>
+                    <div class="ss"><span class="ss-n">Debian 12</span><span class="ss-l">Foundation</span></div>
+                    <div class="ss"><span class="ss-n" data-count="100">0</span><span class="ss-l">Percent open source</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-        // 1. Dot pulses and scales down slightly
-        tl.to(".loader-dot", {
-            scale: 0.5,
-            duration: 0.8,
-            ease: "power2.inOut",
-            yoyo: true,
-            repeat: 1
-        })
-        // 2. Dot expands into a horizontal line
-        .to(".loader-dot", {
-            width: "300px",
-            height: "2px",
-            borderRadius: "0",
-            duration: 0.6,
-            ease: "power4.inOut"
-        })
-        // 3. Line rotates and spins fast
-        .to(".loader-dot", {
-            rotation: 720,
-            duration: 1.2,
-            ease: "power3.inOut"
-        })
-        // 4. Line morphs into the sacred circle
-        .to(".loader-dot", {
-            width: "150px",
-            height: "150px",
-            borderRadius: "50%",
-            backgroundColor: "transparent",
-            border: "2px solid #00D2FF",
-            duration: 0.8,
-            ease: "expo.out"
-        }, "-=0.2")
-        // 5. Text fades out
-        .to(".loader-text", {
-            opacity: 0,
-            duration: 0.4
-        }, "-=0.4")
-        // 6. Circle scales up massively to reveal the site
-        .to(".loader-dot", {
-            scale: 50,
-            borderWidth: "1px",
-            opacity: 0,
-            duration: 1.5,
-            ease: "power4.inOut"
-        })
-        // 7. Hide the loader wrapper completely
-        .to(".loader-wrapper", {
-            autoAlpha: 0,
-            duration: 0.1
-        }, "-=0.5")
-        // 8. Animate hero elements in
-        .from(".hero-logo", {
-            y: 50,
-            opacity: 0,
-            duration: 1,
-            ease: "power3.out"
-        }, "-=0.8")
-        .from(".hero-title", {
-            y: 30,
-            opacity: 0,
-            duration: 0.8,
-            ease: "power3.out"
-        }, "-=0.6")
-        .from(".hero-subtitle", {
-            y: 20,
-            opacity: 0,
-            duration: 0.8,
-            ease: "power3.out"
-        }, "-=0.5")
-        .from(".hero-actions", {
-            y: 20,
-            opacity: 0,
-            duration: 0.8,
-            ease: "power3.out"
-        }, "-=0.4")
-        .from(".hero-features", {
-            y: 20,
-            opacity: 0,
-            duration: 0.8,
-            ease: "power3.out"
-        }, "-=0.3");
-    </script>
+    <section id="compatibility">
+        <div class="sc">
+            <div class="col-a"><p class="sl" data-rl>Compatibility</p></div>
+            <div class="col-b">
+                <h2 class="s-title" data-sr>One machine.<br>Every application.</h2>
+                <div class="ct">
+                    <div class="ct-row" data-tr>
+                        <div class="ct-n">01</div>
+                        <div class="ct-name">Windows</div>
+                        <div class="ct-desc">Run <code>.exe</code> files natively through Wine 9. Thousands of Windows applications work without configuration.</div>
+                        <div class="ct-cmd"><code>run-windows-app program.exe</code></div>
+                    </div>
+                    <div class="ct-row" data-tr>
+                        <div class="ct-n">02</div>
+                        <div class="ct-name">macOS</div>
+                        <div class="ct-desc">Run <code>.app</code> bundles through Darling — an open-source Darwin API reimplementation. No Apple code.</div>
+                        <div class="ct-cmd"><code>run-macos-app App.app</code></div>
+                    </div>
+                    <div class="ct-row" data-tr>
+                        <div class="ct-n">03</div>
+                        <div class="ct-name">Debian</div>
+                        <div class="ct-desc">Install any <code>.deb</code> package with one command or a double-click in Thunar file manager.</div>
+                        <div class="ct-cmd"><code>install-deb package.deb</code></div>
+                    </div>
+                    <div class="ct-row" data-tr>
+                        <div class="ct-n">04</div>
+                        <div class="ct-name">AppImage</div>
+                        <div class="ct-desc">Drop any <code>.AppImage</code> and run instantly. No root, no installation, no system modifications.</div>
+                        <div class="ct-cmd"><code>appimage-run App.AppImage</code></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features">
+        <div class="sc">
+            <div class="col-a"><p class="sl" data-rl>Features</p></div>
+            <div class="col-b">
+                <h2 class="s-title" data-sr>Engineered for the machine you actually use.</h2>
+                <div class="fg">
+                    <div class="fi" data-fi>
+                        <div class="fi-top"><span class="fi-n">01</span><div class="fi-ln"></div></div>
+                        <h3>Pavitra App Runner</h3>
+                        <p>Drag any file onto the dock launcher. It auto-detects the format and launches the correct runtime.</p>
+                    </div>
+                    <div class="fi" data-fi>
+                        <div class="fi-top"><span class="fi-n">02</span><div class="fi-ln"></div></div>
+                        <h3>XFCE4 Desktop</h3>
+                        <p>Lightweight and fast. Ships fully configured — Greybird-dark GTK, Papirus icons, Noto fonts. Ready from first boot.</p>
+                    </div>
+                    <div class="fi" data-fi>
+                        <div class="fi-top"><span class="fi-n">03</span><div class="fi-ln"></div></div>
+                        <h3>Security by Default</h3>
+                        <p>UFW firewall on from first boot. Unattended security updates from Debian repositories only. No telemetry.</p>
+                    </div>
+                    <div class="fi" data-fi>
+                        <div class="fi-top"><span class="fi-n">04</span><div class="fi-ln"></div></div>
+                        <h3>Flatpak + Flathub</h3>
+                        <p>GNOME Software ships pre-installed with Flathub configured. Access the full Flatpak ecosystem without a terminal.</p>
+                    </div>
+                    <div class="fi" data-fi>
+                        <div class="fi-top"><span class="fi-n">05</span><div class="fi-ln"></div></div>
+                        <h3>Performance Tuning</h3>
+                        <p>zram compressed swap with LZ4. CPU schedutil governor. thermald for thermal management. Every boot is fast.</p>
+                    </div>
+                    <div class="fi" data-fi>
+                        <div class="fi-top"><span class="fi-n">06</span><div class="fi-ln"></div></div>
+                        <h3>Full Application Suite</h3>
+                        <p>Firefox ESR, LibreOffice, GIMP, VLC, GParted, Thunar, Transmission — pre-installed and configured.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="build">
+        <div class="sc build-sc">
+            <div class="build-left">
+                <p class="sl" data-rl>Open Source</p>
+                <h2 class="s-title" data-sr>Reproducible from source.</h2>
+                <p class="s-md" data-sr>The entire pipeline is scripted with live-build. Clone and produce an identical 4.9GB bootable ISO on any Debian 12 host.</p>
+                <div class="build-ctas" data-rl>
+                    <a href="https://github.com/brighteyekid/Pavitra-OS" class="btn-p" target="_blank" rel="noopener">View on GitHub</a>
+                    <a href="https://github.com/brighteyekid/Pavitra-OS/releases" class="btn-s" target="_blank" rel="noopener">Download ISO</a>
+                </div>
+            </div>
+            <div class="build-right" data-cr>
+                <div class="cw">
+                    <div class="cw-top">
+                        <span class="cwd r"></span><span class="cwd y"></span><span class="cwd g"></span>
+                        <span class="cw-label">bash</span>
+                    </div>
+                    <pre class="cw-body"><code><span class="cm"># Clone the repository</span>
+git clone https://github.com/brighteyekid/Pavitra-OS.git
+cd Pavitra-OS
+
+<span class="cm"># Install build dependencies</span>
+sudo bash pavitra-os/setup-build-env.sh
+
+<span class="cm"># Build the live filesystem (~60-90 min)</span>
+sudo bash pavitra-os/build-base.sh
+
+<span class="cm"># Generate the bootable ISO</span>
+sudo bash pavitra-os/build-final-iso.sh</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer id="footer">
+        <div class="fi-inner">
+            <div class="ft"><img src="logo.png" alt="Pavitra OS" class="fl"><span class="fw">PAVITRA OS</span></div>
+            <div class="div" style="margin:1.75rem 0"></div>
+            <p>Pavitra OS 1.0 — Based on Debian GNU/Linux 12 Bookworm</p>
+            <p class="fd">GPL-2.0 Licensed. No proprietary code from Apple or Microsoft.</p>
+            <a href="https://github.com/brighteyekid/Pavitra-OS" target="_blank" rel="noopener">github.com/brighteyekid/Pavitra-OS</a>
+        </div>
+    </footer>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/bundled/lenis.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
