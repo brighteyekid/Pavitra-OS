@@ -41,3 +41,4 @@ __pycache__/
 
 # Node (website future deps)
 node_modules/
+*.zip
