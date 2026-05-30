@@ -1,0 +1,81 @@
+================================================================================
+PAVITRA OS 1.0 — PAVITRA APP RUNNER
+================================================================================
+
+The Pavitra App Runner is a graphical drag-and-drop launcher that automatically
+detects the type of any application file and runs it with the correct
+compatibility layer — no terminal commands needed.
+
+────────────────────────────────────────────────────────────────────────────────
+1. LAUNCHING THE APP RUNNER
+────────────────────────────────────────────────────────────────────────────────
+
+  - Click the "Pavitra App Runner" icon in the bottom dock
+  - Or run from terminal: pavitra-app-runner
+  - Or run with a file directly: pavitra-app-runner /path/to/file.exe
+
+────────────────────────────────────────────────────────────────────────────────
+2. USING THE APP RUNNER
+────────────────────────────────────────────────────────────────────────────────
+
+DRAG AND DROP:
+  Drag any application file from Thunar (or the desktop) and drop it onto
+  the large drop zone in the centre of the App Runner window.
+  The file type is detected and shown instantly.
+
+BROWSE FOR A FILE:
+  Click the "Browse…" button to open a file chooser dialog.
+  Select your application file and click "Open".
+
+RUN THE APPLICATION:
+  Once a file is loaded, click the "▶ Run Application" button.
+  The appropriate compatibility layer is chosen automatically:
+
+  ┌─────────────────┬──────────────────────────────────────────────────────┐
+  │ File extension  │ How it is launched                                   │
+  ├─────────────────┼──────────────────────────────────────────────────────┤
+  │ .exe, .msi      │ run-windows-app (Wine)                               │
+  │ .app (bundle)   │ run-macos-app (Darling) — experimental               │
+  │ .deb            │ install-deb (gdebi-gtk)                              │
+  │ .AppImage       │ chmod +x, then execute directly                      │
+  │ ELF binary      │ Execute directly (detected via magic bytes)          │
+  └─────────────────┴──────────────────────────────────────────────────────┘
+
+────────────────────────────────────────────────────────────────────────────────
+3. FILE DETECTION
+────────────────────────────────────────────────────────────────────────────────
+
+The App Runner detects files using two methods:
+
+  1. FILE EXTENSION — checks the filename ending (.exe, .deb, .AppImage, etc.)
+  2. MAGIC BYTES   — for ELF binaries, reads the first 4 bytes of the file
+                     (ELF magic: 0x7F 'E' 'L' 'F') to confirm it is executable
+
+This means even if an ELF binary has no extension, it will still be detected
+and launched correctly.
+
+────────────────────────────────────────────────────────────────────────────────
+4. COMMAND-LINE USAGE
+────────────────────────────────────────────────────────────────────────────────
+
+You can pass a file directly to the App Runner from the terminal:
+
+  pavitra-app-runner /path/to/program.exe
+  pavitra-app-runner /path/to/installer.deb
+  pavitra-app-runner /path/to/App.AppImage
+
+The window opens with the file pre-loaded and detected — just click Run.
+
+────────────────────────────────────────────────────────────────────────────────
+5. INDIVIDUAL COMMAND-LINE TOOLS
+────────────────────────────────────────────────────────────────────────────────
+
+If you prefer the terminal, each compatibility layer has its own command:
+
+  run-windows-app program.exe       — Wine: run a Windows exe
+  run-macos-app App.app             — Darling: run a macOS app (experimental)
+  install-deb package.deb           — gdebi: install a Debian package
+  appimage-run App.AppImage         — run an AppImage
+  /path/to/elf-binary               — run a Linux ELF binary directly
+
+================================================================================

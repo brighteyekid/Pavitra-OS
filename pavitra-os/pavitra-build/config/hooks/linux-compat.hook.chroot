@@ -1,0 +1,253 @@
+#!/usr/bin/env bash
+# =============================================================================
+# linux-compat.hook.chroot — Linux Binary Compatibility Layer
+# Phase 5: 32-bit ELF support, binfmt, Flatpak, AppImage
+# This script runs inside the chroot during live-build
+# =============================================================================
+set -e
+set -x
+
+echo "=============================================="
+echo " Pavitra OS — Linux Compatibility Hook"
+echo "=============================================="
+
+# =============================================================================
+# 1. Install 32-bit compatibility libraries for running 32-bit ELF binaries
+#    on a 64-bit system
+# =============================================================================
+echo "[linux-compat] Installing 32-bit compatibility libraries..."
+
+# Ensure i386 architecture is enabled (wine hook may have done this already)
+dpkg --add-architecture i386 2>/dev/null || true
+apt-get update -y
+
+apt-get install -y \
+    libc6-i386 \
+    lib32stdc++6 \
+    lib32gcc-s1 \
+    libgl1:i386 \
+    libglib2.0-0:i386 \
+    libx11-6:i386 \
+    libxext6:i386 \
+    libstdc++6:i386 || echo "[linux-compat] Some i386 libs unavailable, continuing..."
+
+# =============================================================================
+# 2. Install and configure binfmt-support
+#    binfmt-support registers kernel-level binary format handlers so that
+#    ELF32, ELF64, and other binary types are automatically handled
+# =============================================================================
+echo "[linux-compat] Installing binfmt-support..."
+apt-get install -y binfmt-support
+
+# Enable the binfmt-support service
+systemctl enable binfmt-support 2>/dev/null || true
+
+# Verify ELF formats are registered
+echo "[linux-compat] Registered binfmt formats:"
+ls /proc/sys/fs/binfmt_misc/ 2>/dev/null || echo "(procfs not mounted in chroot — will be active at runtime)"
+
+# =============================================================================
+# 3. Install FUSE (required for both AppImage and Flatpak)
+#    NOTE: fuse3 has a hard Breaks: fuse relationship — NEVER install both.
+#    Use fuse3 (modern) + libfuse2 (legacy AppImage compat) only.
+# =============================================================================
+echo "[linux-compat] Installing FUSE..."
+# Remove legacy fuse if somehow installed to avoid conflict
+apt-get remove -y fuse 2>/dev/null || true
+# Install fuse3 (main), libfuse2 (AppImage compat), libfuse3-3 (runtime)
+apt-get install -y fuse3 libfuse2 libfuse3-3 || \
+    echo "[linux-compat] WARNING: Some FUSE packages unavailable, continuing..."
+
+# Enable fuse module autoload
+echo "fuse" >> /etc/modules-load.d/pavitra-fuse.conf
+
+# =============================================================================
+# 4. Install Flatpak and configure Flathub remote
+#    Flatpak provides sandboxed, distribution-independent Linux app delivery
+# =============================================================================
+echo "[linux-compat] Installing Flatpak..."
+apt-get install -y flatpak gnome-software-plugin-flatpak
+
+# Add Flathub repository (the main source of Flatpak apps)
+# This runs in chroot so the remote is pre-configured for all users
+flatpak remote-add --if-not-exists --system flathub \
+    https://flathub.org/repo/flathub.flatpakrepo || {
+    echo "[linux-compat] WARNING: Could not add Flathub remote (no internet in chroot)."
+    echo "[linux-compat] A script will add it on first boot instead."
+
+    # Create a systemd oneshot service to add Flathub on first boot
+    cat > /etc/systemd/system/pavitra-flatpak-setup.service << 'SERVICE_EOF'
+[Unit]
+Description=Pavitra OS — Add Flathub repository on first boot
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=!/var/lib/pavitra/flatpak-configured
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'flatpak remote-add --if-not-exists --system flathub https://flathub.org/repo/flathub.flatpakrepo && mkdir -p /var/lib/pavitra && touch /var/lib/pavitra/flatpak-configured'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+SERVICE_EOF
+
+    systemctl enable pavitra-flatpak-setup.service 2>/dev/null || true
+}
+
+# =============================================================================
+# 5. Install AppImageLauncher for automatic .AppImage desktop integration
+#    When a user runs an AppImage, it integrates with the desktop automatically
+# =============================================================================
+echo "[linux-compat] Installing AppImage support..."
+
+# Try to install AppImageLauncher from apt
+apt-get install -y appimagelauncher 2>/dev/null || {
+    echo "[linux-compat] appimagelauncher not in apt, setting up AppImage support manually..."
+
+    # Install AppImageLauncher lite (appimaged) as fallback
+    # Create a helper script that makes AppImages executable and integrates them
+    cat > /usr/local/bin/appimage-run << 'APPIMG_EOF'
+#!/usr/bin/env bash
+# appimage-run — Make and run an AppImage file
+APPIMAGE_PATH="$1"
+shift || true
+
+if [ -z "$APPIMAGE_PATH" ]; then
+    echo "Usage: appimage-run /path/to/app.AppImage"
+    exit 1
+fi
+
+if [ ! -f "$APPIMAGE_PATH" ]; then
+    echo "Error: File not found: $APPIMAGE_PATH"
+    exit 1
+fi
+
+chmod +x "$APPIMAGE_PATH"
+exec "$APPIMAGE_PATH" "$@"
+APPIMG_EOF
+    chmod +x /usr/local/bin/appimage-run
+}
+
+# =============================================================================
+# 6. Register .AppImage MIME type
+#    This allows Thunar to recognize and open AppImage files correctly
+# =============================================================================
+echo "[linux-compat] Registering AppImage MIME type..."
+
+cat > /usr/share/mime/packages/pavitra-appimage.xml << 'MIME_EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-appimage">
+    <comment>AppImage Application</comment>
+    <glob pattern="*.AppImage"/>
+    <glob pattern="*.appimage"/>
+    <magic priority="50">
+      <match type="string" offset="0" value="\x7fELF"/>
+    </magic>
+  </mime-type>
+</mime-info>
+MIME_EOF
+
+# Create a .desktop handler for AppImage files
+cat > /usr/share/applications/appimage-launcher.desktop << 'DESKTOP_EOF'
+[Desktop Entry]
+Name=AppImage Launcher
+Comment=Run AppImage applications
+Exec=appimage-run %f
+Icon=application-x-executable
+Type=Application
+Categories=System;
+MimeType=application/x-appimage;
+NoDisplay=true
+DESKTOP_EOF
+
+# =============================================================================
+# 7. Create /usr/local/bin/install-deb — deb file installer
+# =============================================================================
+echo "[linux-compat] Creating install-deb helper..."
+
+cat > /usr/local/bin/install-deb << 'SCRIPT_EOF'
+#!/usr/bin/env bash
+# install-deb — Install a .deb file using gdebi in a terminal window
+# Usage: install-deb /path/to/package.deb
+
+DEB_PATH="$1"
+
+if [ -z "$DEB_PATH" ]; then
+    echo "Usage: install-deb <path-to-deb-file>"
+    echo "Example: install-deb /home/user/package.deb"
+    exit 1
+fi
+
+if [ ! -f "$DEB_PATH" ]; then
+    echo "Error: File not found: $DEB_PATH"
+    exit 1
+fi
+
+# Check file extension
+case "$DEB_PATH" in
+    *.deb|*.DEB) ;;
+    *)
+        echo "Error: File does not appear to be a .deb package: $DEB_PATH"
+        exit 1
+        ;;
+esac
+
+# If running with a display, use gdebi-gtk for GUI installation
+if [ -n "$DISPLAY" ]; then
+    exec gdebi-gtk "$DEB_PATH"
+else
+    # Fall back to gdebi CLI in a terminal
+    if command -v xfce4-terminal &>/dev/null; then
+        exec xfce4-terminal --title="Install .deb: $(basename "$DEB_PATH")" \
+            -e "bash -c 'sudo gdebi \"$DEB_PATH\"; echo Press Enter to close...; read'"
+    else
+        exec sudo gdebi "$DEB_PATH"
+    fi
+fi
+SCRIPT_EOF
+chmod +x /usr/local/bin/install-deb
+
+# =============================================================================
+# 8. Register .deb MIME handler pointing to gdebi-gtk
+# =============================================================================
+echo "[linux-compat] Registering .deb MIME handler..."
+
+cat > /usr/share/mime/packages/pavitra-deb.xml << 'MIME_EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/vnd.debian.binary-package">
+    <comment>Debian Package</comment>
+    <glob pattern="*.deb"/>
+  </mime-type>
+</mime-info>
+MIME_EOF
+
+cat > /usr/share/applications/gdebi-gtk.desktop << 'DESKTOP_EOF'
+[Desktop Entry]
+Name=GDebi Package Installer
+Comment=Install Debian packages
+Exec=gdebi-gtk %f
+Icon=package-x-generic
+Type=Application
+Categories=System;PackageManager;
+MimeType=application/vnd.debian.binary-package;
+NoDisplay=false
+DESKTOP_EOF
+
+# =============================================================================
+# 9. Update MIME and desktop databases
+# =============================================================================
+echo "[linux-compat] Updating system databases..."
+update-mime-database /usr/share/mime || true
+update-desktop-database /usr/share/applications || true
+
+echo ""
+echo "[linux-compat] Linux compatibility setup complete!"
+echo "[linux-compat]   - 32-bit ELF libraries installed"
+echo "[linux-compat]   - binfmt-support enabled"
+echo "[linux-compat]   - Flatpak installed (Flathub configured or will be on boot)"
+echo "[linux-compat]   - AppImage MIME handler registered"
+echo "[linux-compat]   - install-deb launcher created"
+echo "[linux-compat]   - .deb MIME handler (gdebi-gtk) registered"

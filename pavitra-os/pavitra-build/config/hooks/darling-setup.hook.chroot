@@ -1,0 +1,360 @@
+#!/usr/bin/env bash
+# =============================================================================
+# darling-setup.hook.chroot — macOS Application Compatibility Layer
+# Phase 6: Clone and build Darling (macOS compatibility layer for Linux)
+# WARNING: This hook takes a VERY LONG TIME (30-120 minutes) to complete
+# All output is logged to /var/log/pavitra-darling-build.log
+# =============================================================================
+set -e
+set -x
+
+LOG_FILE="/var/log/pavitra-darling-build.log"
+DARLING_SRC="/opt/darling-src"
+DARLING_INSTALL="/opt/darling"
+DARLING_BUILD="${DARLING_SRC}/build"
+
+echo "=============================================="
+echo " Pavitra OS — Darling (macOS Compat) Hook"
+echo " All output: $LOG_FILE"
+echo "=============================================="
+
+# Redirect all output to log file while also showing to console
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+echo "[darling] Build started at: $(date)"
+
+# =============================================================================
+# 1. Pre-flight checks — RAM and disk space
+# =============================================================================
+TOTAL_RAM_KB=$(grep MemTotal /proc/meminfo | awk '{print $2}')
+TOTAL_RAM_GB=$((TOTAL_RAM_KB / 1024 / 1024))
+AVAIL_DISK_KB=$(df -k /opt | awk 'NR==2 {print $4}')
+AVAIL_DISK_GB=$((AVAIL_DISK_KB / 1024 / 1024))
+
+echo "[darling] System RAM:  ${TOTAL_RAM_GB} GB"
+echo "[darling] Free disk at /opt: ${AVAIL_DISK_GB} GB"
+
+if [ "$TOTAL_RAM_GB" -lt 8 ]; then
+    echo "[darling] WARNING: Less than 8 GB RAM. Build may fail or OOM."
+    echo "[darling] Proceeding with best-effort build..."
+fi
+
+if [ "$AVAIL_DISK_GB" -lt 15 ]; then
+    echo "[darling] ERROR: Need at least 15 GB free for Darling build, have ${AVAIL_DISK_GB} GB."
+    echo "[darling] Skipping Darling build. macOS compatibility will NOT be available."
+    # Create a marker file so the system knows Darling wasn't built
+    touch /var/lib/pavitra/darling-build-skipped
+    exit 0
+fi
+
+# =============================================================================
+# 2. Install Darling build dependencies
+#    These are all the CMake, compiler, and library dependencies Darling needs
+# =============================================================================
+echo "[darling] Installing build dependencies..."
+apt-get update -y
+apt-get install -y \
+    cmake \
+    clang \
+    llvm \
+    llvm-dev \
+    lld \
+    libbsd-dev \
+    libudev-dev \
+    libdbus-1-dev \
+    libfreetype6-dev \
+    libfuse3-dev \
+    libgl1-mesa-dev \
+    libglu1-mesa-dev \
+    libssl-dev \
+    libxml2-dev \
+    libbz2-dev \
+    libz-dev \
+    liblzma-dev \
+    libsqlite3-dev \
+    libcups2-dev \
+    libfontconfig1-dev \
+    libx11-dev \
+    libxrandr-dev \
+    libxinerama-dev \
+    libxcursor-dev \
+    libxi-dev \
+    libxext-dev \
+    libasound2-dev \
+    libpulse-dev \
+    libpipewire-0.3-dev \
+    libavcodec-dev \
+    libavformat-dev \
+    libswscale-dev \
+    flex \
+    bison \
+    ninja-build \
+    python3 \
+    python3-pip \
+    git \
+    pkg-config \
+    nasm \
+    yasm || {
+    echo "[darling] WARNING: Some dependencies failed to install. Build may be incomplete."
+}
+
+# =============================================================================
+# 3. Clone the Darling repository with all submodules
+#    Darling uses many git submodules for its various subsystems
+# =============================================================================
+echo "[darling] Cloning Darling repository..."
+
+if [ -d "$DARLING_SRC" ]; then
+    echo "[darling] Darling source directory already exists. Updating..."
+    cd "$DARLING_SRC"
+    git pull --recurse-submodules || echo "[darling] Git pull failed, using existing source."
+else
+    git clone --recursive https://github.com/darlinghq/darling.git "$DARLING_SRC" || {
+        echo "[darling] ERROR: Failed to clone Darling repository."
+        echo "[darling] Check internet connection. Skipping Darling build."
+        touch /var/lib/pavitra/darling-build-skipped
+        exit 0
+    }
+fi
+
+cd "$DARLING_SRC"
+
+# Initialize and update all submodules (Darling has many nested submodules)
+echo "[darling] Initializing submodules (this may take a while)..."
+git submodule update --init --recursive || {
+    echo "[darling] WARNING: Some submodules failed. Attempting partial build."
+}
+
+# =============================================================================
+# 4. Build Darling using CMake
+#    -DCMAKE_INSTALL_PREFIX sets where Darling installs to
+#    -DCMAKE_BUILD_TYPE=RelWithDebInfo gives good performance with debug info
+# =============================================================================
+echo "[darling] Configuring build with CMake..."
+mkdir -p "$DARLING_BUILD"
+cd "$DARLING_BUILD"
+
+cmake "$DARLING_SRC" \
+    -DCMAKE_INSTALL_PREFIX="$DARLING_INSTALL" \
+    -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+    -DCMAKE_C_COMPILER=clang \
+    -DCMAKE_CXX_COMPILER=clang++ \
+    -G Ninja \
+    2>&1 | tee "${LOG_FILE}.cmake"
+CMAKE_EXIT=${PIPESTATUS[0]}
+if [ "$CMAKE_EXIT" -ne 0 ]; then
+    echo "[darling] ERROR: CMake configuration failed (exit $CMAKE_EXIT)!"
+    echo "[darling] Submodules may be missing or a dependency is not found."
+    echo "[darling] See ${LOG_FILE}.cmake for details."
+    echo "[darling] Skipping Darling build — macOS compat will be unavailable."
+    mkdir -p /var/lib/pavitra
+    touch /var/lib/pavitra/darling-build-skipped
+    exit 0
+fi
+
+# =============================================================================
+# 5. Compile Darling
+#    Use $(nproc) parallel jobs to maximize build speed
+# =============================================================================
+JOBS=$(nproc)
+echo "[darling] Starting compilation with $JOBS parallel jobs..."
+echo "[darling] This will take 30-120 minutes depending on system speed."
+
+ninja -j"$JOBS" 2>&1 | tee "${LOG_FILE}.make" || {
+    echo "[darling] ERROR: Darling compilation failed!"
+    echo "[darling] See ${LOG_FILE}.make for details."
+    echo "[darling] Attempting single-threaded build as fallback..."
+    ninja -j1 2>&1 | tee "${LOG_FILE}.make.fallback" || {
+        echo "[darling] ERROR: Single-threaded build also failed. Skipping Darling."
+        touch /var/lib/pavitra/darling-build-skipped
+        exit 0
+    }
+}
+
+# =============================================================================
+# 6. Install Darling to /opt/darling
+# =============================================================================
+echo "[darling] Installing Darling to $DARLING_INSTALL ..."
+ninja install 2>&1 | tee "${LOG_FILE}.install"
+
+# Add Darling to PATH
+echo "export PATH=\"$DARLING_INSTALL/bin:\$PATH\"" >> /etc/profile.d/darling.sh
+chmod +x /etc/profile.d/darling.sh
+
+# =============================================================================
+# 7. Create the run-macos-app launcher script
+# =============================================================================
+echo "[darling] Creating run-macos-app launcher..."
+cat > /usr/local/bin/run-macos-app << 'SCRIPT_EOF'
+#!/usr/bin/env bash
+# run-macos-app — Launch a macOS .app bundle or Mach-O binary using Darling
+# Usage: run-macos-app /path/to/App.app
+#        run-macos-app /path/to/macho-binary
+#
+# IMPORTANT: macOS app support via Darling is EXPERIMENTAL.
+# Many apps will not work due to missing proprietary macOS frameworks.
+# You must supply your own legally-obtained macOS binaries.
+
+DARLING_BIN="/opt/darling/bin/darling"
+APP_PATH="$1"
+shift || true
+
+if [ -z "$APP_PATH" ]; then
+    echo "Usage: run-macos-app <path-to-app-bundle-or-binary>"
+    echo ""
+    echo "Examples:"
+    echo "  run-macos-app /home/user/MyApp.app"
+    echo "  run-macos-app /home/user/macho-binary"
+    echo ""
+    echo "NOTE: macOS app support is EXPERIMENTAL. Many apps will not work."
+    echo "See /usr/share/pavitra-os/docs/macos-compat.txt for details."
+    exit 1
+fi
+
+if [ ! -e "$APP_PATH" ]; then
+    echo "Error: Path not found: $APP_PATH"
+    exit 1
+fi
+
+if [ ! -f "$DARLING_BIN" ]; then
+    echo "Error: Darling is not installed at $DARLING_BIN"
+    echo "The Darling build may have failed during OS construction."
+    echo "See /var/log/pavitra-darling-build.log for build details."
+    exit 1
+fi
+
+# Determine if this is a .app bundle or a plain binary
+if [ -d "$APP_PATH" ] && [[ "$APP_PATH" == *.app ]]; then
+    # .app bundle: find the actual binary inside
+    APP_NAME=$(basename "$APP_PATH" .app)
+    BINARY_PATH="$APP_PATH/Contents/MacOS/$APP_NAME"
+    if [ ! -f "$BINARY_PATH" ]; then
+        # Try to find any binary in MacOS/
+        BINARY_PATH=$(find "$APP_PATH/Contents/MacOS/" -type f -executable | head -1)
+    fi
+    if [ -z "$BINARY_PATH" ]; then
+        echo "Error: Could not find executable binary inside $APP_PATH"
+        exit 1
+    fi
+    echo "Found app binary: $BINARY_PATH"
+else
+    BINARY_PATH="$APP_PATH"
+fi
+
+echo "Launching via Darling: $BINARY_PATH"
+echo "(This is experimental — many macOS apps require proprietary Apple frameworks)"
+echo ""
+exec "$DARLING_BIN" shell "$BINARY_PATH" "$@"
+SCRIPT_EOF
+chmod +x /usr/local/bin/run-macos-app
+
+# =============================================================================
+# 8. Register .app bundle MIME type handler for Thunar
+# =============================================================================
+echo "[darling] Registering .app bundle MIME type..."
+
+cat > /usr/share/mime/packages/pavitra-macos-app.xml << 'MIME_EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-apple-app-bundle">
+    <comment>macOS Application Bundle</comment>
+    <glob pattern="*.app"/>
+    <sub-class-of type="inode/directory"/>
+  </mime-type>
+</mime-info>
+MIME_EOF
+
+cat > /usr/share/applications/darling-run.desktop << 'DESKTOP_EOF'
+[Desktop Entry]
+Name=Darling macOS Compatibility
+Comment=Run macOS applications on Linux (Experimental)
+Exec=run-macos-app %f
+Icon=application-x-executable
+Type=Application
+Categories=System;Emulator;
+MimeType=application/x-apple-app-bundle;
+NoDisplay=true
+DESKTOP_EOF
+
+# =============================================================================
+# 9. Write macOS compatibility documentation
+# =============================================================================
+echo "[darling] Writing macOS compatibility documentation..."
+mkdir -p /usr/share/pavitra-os/docs
+
+cat > /usr/share/pavitra-os/docs/macos-compat.txt << 'DOCS_EOF'
+PAVITRA OS — macOS APPLICATION COMPATIBILITY
+============================================
+
+Pavitra OS includes Darling, an open-source macOS compatibility layer for Linux.
+Darling works similarly to how Wine provides Windows compatibility: it reimplements
+macOS system calls and libraries so that macOS binaries can run on a Linux kernel.
+
+HOW TO RUN A macOS APPLICATION
+-------------------------------
+1. Open a Terminal
+2. Run: run-macos-app /path/to/YourApp.app
+   Or for a plain Mach-O binary: run-macos-app /path/to/binary
+3. You can also double-click a .app bundle in Thunar
+
+IMPORTANT LIMITATIONS
+----------------------
+macOS application support via Darling is EXPERIMENTAL and has significant limitations:
+
+1. Many macOS apps rely on proprietary Apple frameworks (AppKit, CoreData, Metal,
+   CoreGraphics, etc.) that Darling does not fully implement. These apps will
+   likely crash or refuse to start.
+
+2. Apple Silicon (ARM64) .app bundles will NOT work — Pavitra OS is x86_64 only.
+   You need macOS apps compiled for Intel (x86_64) Macs.
+
+3. Apps that require macOS-specific hardware features (Touch ID, T2 chip,
+   Secure Enclave) will not function.
+
+4. GPU-accelerated apps using Metal will not work. OpenGL-based apps may work
+   partially.
+
+5. Apps that check for a real macOS installation will fail with errors about
+   the operating system.
+
+6. macOS system applications (Finder, Safari, etc.) are NOT included in Darling
+   and cannot be used.
+
+LEGAL NOTICE
+-------------
+Pavitra OS does NOT include any proprietary software from Apple Inc.
+Darling is an open-source project (LGPL license) that reimplements macOS APIs.
+
+You are SOLELY RESPONSIBLE for ensuring that you have the legal right to run
+any macOS applications on your system. This may require owning a valid macOS
+license.
+
+SUPPORT AND TROUBLESHOOTING
+-----------------------------
+- Darling project website: https://www.darlinghq.org/
+- Darling GitHub: https://github.com/darlinghq/darling
+- Build log: /var/log/pavitra-darling-build.log
+
+If an app fails to run, check /var/log/pavitra-darling-build.log to verify
+that Darling built successfully, and then check the Darling compatibility
+database for your specific application.
+DOCS_EOF
+
+# =============================================================================
+# 10. Update databases
+# =============================================================================
+update-mime-database /usr/share/mime || true
+update-desktop-database /usr/share/applications || true
+
+# Mark Darling as successfully built
+mkdir -p /var/lib/pavitra
+touch /var/lib/pavitra/darling-build-success
+
+echo ""
+echo "[darling] =============================================="
+echo "[darling] Darling (macOS compatibility) setup COMPLETE!"
+echo "[darling] Installed at: $DARLING_INSTALL"
+echo "[darling] Launcher: /usr/local/bin/run-macos-app"
+echo "[darling] Build log: $LOG_FILE"
+echo "[darling] Build finished at: $(date)"
+echo "[darling] =============================================="

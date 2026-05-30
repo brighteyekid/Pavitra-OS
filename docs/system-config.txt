@@ -1,0 +1,186 @@
+================================================================================
+PAVITRA OS 1.0 — SYSTEM CONFIGURATION
+================================================================================
+
+This document covers hostname, users, firewall, automatic updates, swap,
+and performance settings in Pavitra OS.
+
+────────────────────────────────────────────────────────────────────────────────
+1. SYSTEM IDENTITY
+────────────────────────────────────────────────────────────────────────────────
+
+  Hostname          : pavitra-os
+  OS release file   : /etc/pavitra-os-release
+  Based on          : Debian 12 (Bookworm)
+  Kernel            : Linux 6.1 LTS (linux-image-amd64)
+  Init system       : systemd
+  Architecture      : x86_64
+
+  TO CHANGE HOSTNAME:
+    sudo hostnamectl set-hostname new-hostname
+    Also update /etc/hosts:
+      sudo nano /etc/hosts
+      Change "127.0.1.1   pavitra-os" to "127.0.1.1   new-hostname"
+
+  TO CHECK SYSTEM INFO:
+    neofetch                  — colorful system overview in terminal
+    hostnamectl               — hostname, OS, kernel info
+    uname -r                  — kernel version
+    lsb_release -a            — OS version details
+
+────────────────────────────────────────────────────────────────────────────────
+2. USER MANAGEMENT
+────────────────────────────────────────────────────────────────────────────────
+
+  DEFAULT USER:
+    Username   : pavitra
+    Password   : pavitra   ← CHANGE THIS IMMEDIATELY
+    Groups     : sudo, audio, video, plugdev, netdev
+
+  CHANGE YOUR PASSWORD:
+    passwd
+
+  CREATE A NEW USER:
+    sudo adduser username
+    sudo usermod -aG sudo,audio,video,plugdev,netdev username
+
+  DELETE A USER:
+    sudo deluser --remove-home username
+
+  LIST ALL USERS:
+    cat /etc/passwd | grep -v nologin | grep -v false
+
+  GRANT SUDO ACCESS:
+    sudo usermod -aG sudo username
+
+────────────────────────────────────────────────────────────────────────────────
+3. TIMEZONE AND LOCALE
+────────────────────────────────────────────────────────────────────────────────
+
+  Default timezone: UTC
+
+  CHANGE TIMEZONE:
+    sudo dpkg-reconfigure tzdata
+    Or: sudo timedatectl set-timezone America/New_York
+    Or: sudo timedatectl set-timezone Asia/Kolkata
+
+  LIST AVAILABLE TIMEZONES:
+    timedatectl list-timezones
+    timedatectl list-timezones | grep India
+
+  CHANGE LOCALE (LANGUAGE):
+    sudo dpkg-reconfigure locales
+    Select your locale (e.g., en_US.UTF-8, en_IN.UTF-8, de_DE.UTF-8)
+    Set as system default when prompted.
+    Log out and back in for the change to take effect.
+
+────────────────────────────────────────────────────────────────────────────────
+4. FIREWALL (UFW)
+────────────────────────────────────────────────────────────────────────────────
+
+  Pavitra OS uses UFW (Uncomplicated Firewall) with these defaults:
+    Incoming: DENY (block all inbound connections)
+    Outgoing: ALLOW (permit all outbound connections)
+
+  This means your machine cannot be connected to from the network, but you
+  can freely initiate connections to the internet.
+
+  COMMON UFW COMMANDS:
+    sudo ufw status                     — show current rules
+    sudo ufw status verbose             — detailed status
+
+    sudo ufw allow 22/tcp               — allow SSH incoming
+    sudo ufw allow 80/tcp               — allow HTTP
+    sudo ufw allow 443/tcp              — allow HTTPS
+    sudo ufw allow from 192.168.1.0/24  — allow from local network
+
+    sudo ufw deny 22/tcp                — block SSH
+    sudo ufw delete allow 22/tcp        — remove a rule
+
+    sudo ufw enable                     — enable firewall
+    sudo ufw disable                    — disable firewall (not recommended)
+    sudo ufw reset                      — reset all rules to defaults
+
+────────────────────────────────────────────────────────────────────────────────
+5. AUTOMATIC SECURITY UPDATES
+────────────────────────────────────────────────────────────────────────────────
+
+  unattended-upgrades is configured to automatically apply security patches
+  from the Debian security repository only. Regular feature updates are NOT
+  applied automatically — you control when to upgrade other packages.
+
+  CONFIGURATION FILE:
+    /etc/apt/apt.conf.d/50unattended-upgrades
+
+  TO DISABLE AUTOMATIC UPDATES (not recommended):
+    sudo systemctl disable unattended-upgrades
+
+  TO MANUALLY CHECK FOR UPDATES:
+    sudo apt update && sudo apt upgrade
+
+  TO SEE WHAT WAS AUTOMATICALLY UPDATED:
+    cat /var/log/unattended-upgrades/unattended-upgrades.log
+
+────────────────────────────────────────────────────────────────────────────────
+6. ZRAM COMPRESSED SWAP
+────────────────────────────────────────────────────────────────────────────────
+
+  Pavitra OS uses zram — a compressed RAM-based swap device. Instead of
+  swapping to a slow disk, data is compressed and kept in RAM. This improves
+  performance significantly on systems with limited RAM.
+
+  CONFIGURATION:
+    /etc/default/zramswap
+    Default: ALGO=lz4, PERCENT=50 (50% of RAM used as compressed swap)
+
+  CHECK ZRAM STATUS:
+    sudo zramctl               — show zram devices and compression stats
+    free -h                    — show total memory including swap
+    swapon --show              — show swap devices
+
+  ADJUST ZRAM SIZE:
+    sudo nano /etc/default/zramswap
+    Change PERCENT=50 to another value (e.g., 25 or 75)
+    sudo systemctl restart zramswap
+
+────────────────────────────────────────────────────────────────────────────────
+7. CPU PERFORMANCE GOVERNOR
+────────────────────────────────────────────────────────────────────────────────
+
+  The CPU frequency scaling governor controls how the CPU adjusts its clock
+  speed in response to workload.
+
+  Default governor: schedutil (kernel-managed, balances performance and power)
+
+  AVAILABLE GOVERNORS:
+    performance — always maximum clock speed (best for desktop workloads)
+    powersave   — always minimum clock speed (best for battery)
+    schedutil   — dynamically scales based on scheduler demand (default)
+    ondemand    — scales based on CPU usage percentage (legacy)
+
+  CHANGE GOVERNOR TEMPORARILY:
+    sudo cpupower frequency-set -g performance
+
+  CHANGE GOVERNOR PERMANENTLY:
+    sudo nano /etc/systemd/system/pavitra-cpugovernor.service
+    Change "schedutil" to your preferred governor.
+    sudo systemctl daemon-reload && sudo systemctl restart pavitra-cpugovernor
+
+  CHECK CURRENT GOVERNOR:
+    cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+
+────────────────────────────────────────────────────────────────────────────────
+8. THERMAL MANAGEMENT
+────────────────────────────────────────────────────────────────────────────────
+
+  thermald (Intel Thermal Daemon) is running and manages CPU throttling on
+  Intel systems to prevent overheating.
+
+  CHECK TEMPERATURE:
+    sensors                          — requires lm-sensors
+    sudo apt install lm-sensors && sudo sensors-detect
+
+  thermald runs transparently — no configuration is normally needed.
+  To check its status: sudo systemctl status thermald
+
+================================================================================

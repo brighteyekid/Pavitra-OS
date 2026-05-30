@@ -1,0 +1,175 @@
+================================================================================
+PAVITRA OS 1.0 — TROUBLESHOOTING
+================================================================================
+
+This document covers common problems and their solutions.
+
+────────────────────────────────────────────────────────────────────────────────
+BUILD ISSUES
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM: lb config fails with "unrecognized option"
+  → The Ubuntu-packaged live-build may have a different option set than
+    the Debian version. Remove the failing option from build-base.sh.
+  → Check the available options: lb config --help
+
+PROBLEM: lb build fails with "debootstrap failed"
+  → Ensure you have internet access during the build.
+  → Check /home/fox/Documents/OS/pavitra-os/build.log for the exact error.
+  → Try: sudo lb clean && sudo bash build-iso.sh
+
+PROBLEM: Build fails with "No space left on device"
+  → Free disk space. The full build (with Darling) needs ~20 GB.
+  → Remove the darling-setup.hook.chroot to skip macOS support (~15 GB needed).
+  → Clear old build artifacts: sudo lb clean --all
+
+PROBLEM: Darling build fails with "cmake: command not found"
+  → The darling hook installs cmake, but network may have been unavailable.
+  → Re-run: sudo apt install cmake clang llvm ninja-build
+  → Then rebuild.
+
+PROBLEM: Darling build runs out of memory (OOM killed)
+  → Need ≥8 GB RAM for the Darling compilation.
+  → Add swap space: sudo fallocate -l 8G /swapfile && sudo mkswap /swapfile
+    sudo swapon /swapfile
+  → Or remove darling-setup.hook.chroot to skip Darling.
+
+────────────────────────────────────────────────────────────────────────────────
+BOOT ISSUES
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM: GRUB menu does not appear (boots straight to OS or black screen)
+  → Wait — the timeout is 5 seconds. Hold Shift or Esc during boot to force it.
+
+PROBLEM: "Boot Pavitra OS" leads to black screen
+  → Try "Boot Pavitra OS (Safe Mode — nomodeset)" from the GRUB menu.
+  → nomodeset disables kernel mode-setting and uses a generic framebuffer.
+  → After booting, install the correct GPU driver.
+
+PROBLEM: System hangs after GRUB (stuck on splash)
+  → At GRUB, edit the boot entry (press 'e'), find the line starting with
+    "linux", and add "debug" or remove "quiet splash" to see boot messages.
+  → Press Ctrl+X to boot with the edited parameters.
+
+PROBLEM: EFI/UEFI system won't boot from USB
+  → Ensure Secure Boot is disabled in your UEFI firmware settings.
+  → The ISO includes shim-signed for Secure Boot, but it may not match
+    your system's key database.
+  → Try Legacy/CSM boot mode if available.
+
+────────────────────────────────────────────────────────────────────────────────
+DESKTOP / LOGIN ISSUES
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM: LightDM login screen does not appear (stuck at TTY)
+  → Check if LightDM is running: sudo systemctl status lightdm
+  → Check display: echo $DISPLAY
+  → Restart LightDM: sudo systemctl restart lightdm
+
+PROBLEM: XFCE4 does not start after login (returns to login screen)
+  → Check the XFCE session log: cat ~/.xsession-errors
+  → Common cause: corrupt .config/xfce4/ directory.
+    Fix: mv ~/.config/xfce4 ~/.config/xfce4.bak && restart LightDM
+
+PROBLEM: Wallpaper is plain grey instead of Pavitra wallpaper
+  → The wallpaper file may not have been copied to /usr/share/pavitra-os/
+  → Check: ls /usr/share/pavitra-os/wallpaper.png
+  → If missing, the Python wallpaper generation step in desktop-setup.hook
+    may have failed. Re-run manually:
+    python3 -c "from PIL import Image; ..." (see desktop-setup.hook.chroot)
+
+PROBLEM: Icons look wrong or missing
+  → Regenerate icon cache: gtk-update-icon-cache /usr/share/icons/Papirus-Dark
+  → Or: sudo apt install --reinstall papirus-icon-theme
+
+────────────────────────────────────────────────────────────────────────────────
+WINE / WINDOWS APP ISSUES
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM: .exe file does not open when double-clicked in Thunar
+  → Check the MIME handler: xdg-mime query default application/x-ms-dos-executable
+  → Reset it: xdg-mime default wine-run.desktop application/x-ms-dos-executable
+  → Or just run from terminal: run-windows-app /path/to/program.exe
+
+PROBLEM: Wine opens but shows a DLL error dialog
+  → Install the required runtime with winetricks:
+    winetricks vcrun2019     for Visual C++ 2015-2019
+    winetricks dotnet48      for .NET Framework 4.8
+    winetricks d3dx9         for DirectX 9
+
+PROBLEM: Wine application has no sound
+  → Ensure PipeWire is running: systemctl --user status pipewire
+  → Restart PipeWire: systemctl --user restart pipewire pipewire-pulse
+  → In Wine: winecfg → Audio → ensure a driver is selected
+
+PROBLEM: Wine is very slow
+  → Install DXVK for DirectX → Vulkan translation: winetricks dxvk
+  → Ensure 3D acceleration is working: glxinfo | grep "direct rendering"
+    Should show "direct rendering: Yes"
+
+────────────────────────────────────────────────────────────────────────────────
+DARLING / macOS APP ISSUES
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM: run-macos-app says "Darling is not installed"
+  → Check if build succeeded: ls /opt/darling/bin/darling
+  → Check the build log: cat /var/log/pavitra-darling-build.log
+  → If build failed, Darling can be rebuilt manually:
+    cd /opt/darling-src/build && ninja && ninja install
+
+PROBLEM: macOS app crashes immediately
+  → This is expected for many apps. Darling is experimental.
+  → Check Darling's compatibility list: https://www.darlinghq.org/
+  → Try a simpler CLI macOS binary first to verify Darling is working.
+
+────────────────────────────────────────────────────────────────────────────────
+FLATPAK / APPIMAGE ISSUES
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM: AppImage fails with "FUSE not available"
+  → Run: sudo modprobe fuse
+  → Add yourself to the fuse group: sudo adduser $USER fuse
+  → Log out and back in.
+  → Or run with: ./App.AppImage --appimage-extract-and-run
+
+PROBLEM: Flathub remote not available
+  → Check: flatpak remotes
+  → Add manually: flatpak remote-add --if-not-exists --user flathub \
+      https://flathub.org/repo/flathub.flatpakrepo
+  → Ensure you have internet access.
+
+PROBLEM: GNOME Software does not show Flatpak apps
+  → Install the plugin: sudo apt install gnome-software-plugin-flatpak
+  → Restart GNOME Software.
+
+────────────────────────────────────────────────────────────────────────────────
+NETWORK ISSUES
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM: Wi-Fi not detected
+  → Check if the driver is loaded: lspci -k | grep -i wireless
+  → Check if firmware is needed: dmesg | grep firmware
+  → Install firmware: sudo apt install firmware-iwlwifi (Intel)
+    or: sudo apt install firmware-realtek (Realtek)
+
+PROBLEM: NetworkManager not showing networks
+  → Restart NetworkManager: sudo systemctl restart NetworkManager
+  → Check status: sudo systemctl status NetworkManager
+
+────────────────────────────────────────────────────────────────────────────────
+AUDIO ISSUES
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM: No sound
+  → Check PipeWire: systemctl --user status pipewire
+  → Restart: systemctl --user restart pipewire pipewire-pulse wireplumber
+  → Open pavucontrol and ensure the correct output device is selected
+    and not muted.
+  → Check volume: amixer sset Master unmute && amixer sset Master 80%
+
+PROBLEM: pavucontrol shows no audio devices
+  → sudo alsa-info (generates a report of your audio hardware)
+  → Check: aplay -l (list ALSA playback devices)
+  → Try: pulseaudio --start (compatibility shim)
+
+================================================================================

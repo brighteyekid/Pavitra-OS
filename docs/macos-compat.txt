@@ -1,0 +1,40 @@
+PAVITRA OS — macOS APPLICATION COMPATIBILITY
+============================================
+
+Pavitra OS includes Darling, an open-source macOS compatibility layer for Linux.
+Darling works similarly to how Wine provides Windows compatibility: it reimplements
+macOS system calls and libraries so that macOS binaries can run on a Linux kernel.
+
+HOW TO RUN A macOS APPLICATION
+-------------------------------
+1. Open a Terminal
+2. Run: run-macos-app /path/to/YourApp.app
+   Or for a plain Mach-O binary: run-macos-app /path/to/binary
+3. You can also double-click a .app bundle in Thunar
+
+IMPORTANT LIMITATIONS
+----------------------
+macOS application support via Darling is EXPERIMENTAL:
+
+1. Many apps rely on proprietary Apple frameworks (AppKit, CoreData, Metal,
+   CoreGraphics, etc.) that Darling does not fully implement.
+
+2. Apple Silicon (ARM64) .app bundles will NOT work — x86_64 only.
+
+3. Apps requiring Touch ID, T2 chip, Secure Enclave will not function.
+
+4. GPU-accelerated apps using Metal will not work. OpenGL may work partially.
+
+5. Apps that detect a real macOS install will fail.
+
+6. macOS system apps (Finder, Safari, etc.) are NOT included.
+
+LEGAL NOTICE
+-------------
+Pavitra OS does NOT include any proprietary Apple software. Darling is LGPL.
+You are SOLELY RESPONSIBLE for the legal right to run macOS applications.
+
+SUPPORT
+--------
+Darling project: https://www.darlinghq.org/
+Build log:       /var/log/pavitra-darling-build.log

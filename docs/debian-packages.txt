@@ -1,0 +1,98 @@
+================================================================================
+PAVITRA OS 1.0 — DEBIAN PACKAGE INSTALLATION (.deb)
+================================================================================
+
+Since Pavitra OS is built on Debian 12 (Bookworm), native Debian packages
+(.deb files) install and run without any compatibility layer whatsoever.
+
+────────────────────────────────────────────────────────────────────────────────
+1. INSTALLING A .deb FILE
+────────────────────────────────────────────────────────────────────────────────
+
+METHOD 1 — Double-click in Thunar (recommended for most users):
+  Navigate to the .deb file in the Thunar file manager and double-click it.
+  GDebi opens and shows you the package information. Click "Install Package".
+  You will be prompted for your sudo password.
+
+METHOD 2 — install-deb command (terminal):
+  install-deb /path/to/package.deb
+
+  If a display is available, this opens gdebi-gtk (GUI).
+  If no display is available, it runs gdebi in the terminal.
+
+METHOD 3 — gdebi-gtk directly:
+  gdebi-gtk /path/to/package.deb
+
+METHOD 4 — gdebi CLI:
+  sudo gdebi /path/to/package.deb
+
+METHOD 5 — dpkg (low-level, no dependency resolution):
+  sudo dpkg -i /path/to/package.deb
+  sudo apt install -f              — fix any missing dependencies afterward
+
+────────────────────────────────────────────────────────────────────────────────
+2. WHY USE GDEBI INSTEAD OF DPKG?
+────────────────────────────────────────────────────────────────────────────────
+
+The `dpkg -i` command installs the package but does NOT automatically resolve
+missing dependencies. If the package depends on libraries not yet installed,
+dpkg will report errors.
+
+GDebi:
+  ✓ Resolves and installs dependencies automatically (like apt)
+  ✓ Shows you the package description before installing
+  ✓ Provides both GUI (gdebi-gtk) and CLI (gdebi) interfaces
+  ✓ Is the safest and most reliable way to install .deb files
+
+────────────────────────────────────────────────────────────────────────────────
+3. INSTALLING PACKAGES FROM APT (RECOMMENDED FOR SYSTEM SOFTWARE)
+────────────────────────────────────────────────────────────────────────────────
+
+For software available in Debian's repositories, always prefer apt over
+downloading a .deb file manually:
+
+  sudo apt update                    — refresh package list
+  sudo apt install <package-name>    — install a package
+  sudo apt remove <package-name>     — uninstall a package
+  sudo apt purge <package-name>      — uninstall + remove config files
+  apt search <keyword>               — search for packages
+  apt show <package-name>            — show package details
+
+────────────────────────────────────────────────────────────────────────────────
+4. ADDING THIRD-PARTY APT REPOSITORIES
+────────────────────────────────────────────────────────────────────────────────
+
+Some software ships its own apt repository for automatic updates:
+
+  # Example: Add a third-party repository
+  wget -qO /etc/apt/keyrings/example.gpg https://example.com/key.gpg
+  echo "deb [signed-by=/etc/apt/keyrings/example.gpg] https://example.com/apt stable main" \
+    | sudo tee /etc/apt/sources.list.d/example.list
+  sudo apt update
+  sudo apt install example-software
+
+────────────────────────────────────────────────────────────────────────────────
+5. MANAGING INSTALLED PACKAGES
+────────────────────────────────────────────────────────────────────────────────
+
+  dpkg -l                   — list all installed packages
+  dpkg -l | grep <name>     — search installed packages
+  dpkg -L <package>         — list files installed by a package
+  dpkg -S /path/to/file     — find which package owns a file
+  apt list --installed      — list installed packages (apt format)
+  sudo apt autoremove       — remove unused dependency packages
+
+────────────────────────────────────────────────────────────────────────────────
+6. SYSTEM UPDATES
+────────────────────────────────────────────────────────────────────────────────
+
+Pavitra OS automatically applies security updates via unattended-upgrades
+(Debian security repository only). You can also update manually:
+
+  sudo apt update && sudo apt upgrade           — update all packages
+  sudo apt update && sudo apt full-upgrade      — upgrade with dependency changes
+
+  To check what updates are pending without installing:
+  apt list --upgradable
+
+================================================================================

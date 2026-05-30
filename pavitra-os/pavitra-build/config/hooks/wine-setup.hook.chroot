@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+# =============================================================================
+# wine-setup.hook.chroot — Windows Application Compatibility Layer
+# Phase 3: Install and configure Wine, Winetricks, PlayOnLinux, and MIME types
+# This script runs inside the chroot during live-build
+# =============================================================================
+set -e
+set -x
+
+echo "=============================================="
+echo " Pavitra OS — Wine Setup Hook"
+echo "=============================================="
+
+# =============================================================================
+# 1. Enable 32-bit (i386) architecture support
+#    Wine requires 32-bit libraries even on 64-bit systems to run 32-bit .exe files
+# =============================================================================
+echo "[wine-setup] Enabling i386 architecture..."
+dpkg --add-architecture i386
+apt-get update -y
+
+# =============================================================================
+# 2. Add the WineHQ official Debian repository for the latest stable Wine
+#    The standard Debian repo ships an older Wine version
+# =============================================================================
+echo "[wine-setup] Adding WineHQ repository..."
+apt-get install -y wget gnupg2 ca-certificates apt-transport-https software-properties-common
+
+# Fetch and add the WineHQ GPG key
+mkdir -p /etc/apt/keyrings
+wget -qO /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key 2>/dev/null || {
+    echo "[wine-setup] WARNING: Could not fetch WineHQ key from internet."
+    echo "[wine-setup] Falling back to Debian packaged wine..."
+    apt-get install -y wine wine64 wine32
+    WINE_FALLBACK=1
+}
+
+if [ -z "${WINE_FALLBACK:-}" ]; then
+    # Detect Debian version codename for the repo URL
+    CODENAME=$(lsb_release -cs 2>/dev/null || echo "bookworm")
+    echo "deb [arch=amd64,i386 signed-by=/etc/apt/keyrings/winehq-archive.key] \
+        https://dl.winehq.org/wine-builds/debian/ ${CODENAME} main" \
+        > /etc/apt/sources.list.d/winehq.list
+
+    apt-get update -y
+
+    # Install WineHQ stable branch (wine64 + wine32 via i386)
+    echo "[wine-setup] Installing winehq-stable..."
+    apt-get install -y --install-recommends winehq-stable || {
+        echo "[wine-setup] winehq-stable failed. Falling back to Debian wine packages."
+        apt-get install -y wine wine64 wine32
+    }
+fi
+
+# =============================================================================
+# 3. Install Winetricks — helper script for installing Windows runtimes
+#    (DirectX, .NET, Visual C++ Redistributables, etc.)
+# =============================================================================
+echo "[wine-setup] Installing winetricks..."
+apt-get install -y winetricks || {
+    # Manual install if package not found
+    wget -qO /usr/bin/winetricks https://raw.githubusercontent.com/Winetricks/winetricks/master/src/winetricks
+    chmod +x /usr/bin/winetricks
+}
+
+# =============================================================================
+# 4. Install PlayOnLinux — graphical frontend for managing Wine prefixes
+# =============================================================================
+echo "[wine-setup] Installing PlayOnLinux..."
+apt-get install -y playonlinux || echo "[wine-setup] WARNING: PlayOnLinux not available in repo, skipping."
+
+# =============================================================================
+# 5. Configure a default Wine prefix skeleton in /etc/skel/.wine
+#    Every new user created on Pavitra OS will inherit this pre-configured prefix
+# =============================================================================
+echo "[wine-setup] Configuring default Wine prefix skeleton..."
+export WINEPREFIX=/etc/skel/.wine
+export WINEDEBUG=-all
+export DISPLAY=:0.0
+
+# Initialize the Wine prefix in a headless manner
+# wineboot --init needs a display, we use xvfb-run if available
+if command -v xvfb-run &>/dev/null; then
+    xvfb-run --auto-servernum wineboot --init || true
+else
+    # Without display, just create the directory structure manually
+    mkdir -p /etc/skel/.wine/drive_c/windows/system32
+    mkdir -p /etc/skel/.wine/drive_c/windows/syswow64
+    mkdir -p /etc/skel/.wine/drive_c/Program\ Files
+    mkdir -p /etc/skel/.wine/drive_c/Program\ Files\ \(x86\)
+    mkdir -p /etc/skel/.wine/drive_c/users/Default
+    # Write a minimal system.reg
+    cat > /etc/skel/.wine/system.reg << 'REGEOF'
+WINE REGISTRY Version 2
+;; All keys relative to \\Machine
+
+[Software\\Wine]
+"Version"="win10"
+REGEOF
+
+    cat > /etc/skel/.wine/user.reg << 'REGEOF'
+WINE REGISTRY Version 2
+;; All keys relative to \\User\\S-1-5-4
+REGEOF
+
+    cat > /etc/skel/.wine/userdef.reg << 'REGEOF'
+WINE REGISTRY Version 2
+;; All keys relative to \\User\\S-1-5-4
+REGEOF
+fi
+
+# Set Windows version to Windows 10 for best compatibility
+cat >> /etc/skel/.wine/system.reg << 'EOF' 2>/dev/null || true
+
+[System\\CurrentControlSet\\Control\\Windows]
+"CSDVersion"=dword:00000000
+"CurrentBuildNumber"="19041"
+"CurrentVersion"="10.0"
+EOF
+
+echo "[wine-setup] Wine prefix skeleton created at /etc/skel/.wine"
+
+# =============================================================================
+# 6. Create /usr/local/bin/run-windows-app — CLI launcher for .exe files
+# =============================================================================
+echo "[wine-setup] Creating run-windows-app launcher..."
+cat > /usr/local/bin/run-windows-app << 'SCRIPT_EOF'
+#!/usr/bin/env bash
+# run-windows-app — Launch a Windows .exe file with Wine
+# Usage: run-windows-app /path/to/program.exe [args...]
+
+set -e
+
+EXE_PATH="$1"
+shift || true
+
+if [ -z "$EXE_PATH" ]; then
+    echo "Usage: run-windows-app <path-to-exe-file> [args...]"
+    echo "Example: run-windows-app /home/user/setup.exe"
+    exit 1
+fi
+
+if [ ! -f "$EXE_PATH" ]; then
+    echo "Error: File not found: $EXE_PATH"
+    exit 1
+fi
+
+# Ensure WINE prefix exists for current user
+export WINEPREFIX="${WINEPREFIX:-$HOME/.wine}"
+if [ ! -d "$WINEPREFIX" ]; then
+    echo "Initializing Wine prefix at $WINEPREFIX ..."
+    WINEDEBUG=-all wineboot --init 2>/dev/null || true
+fi
+
+echo "Launching with Wine: $EXE_PATH"
+exec wine "$EXE_PATH" "$@"
+SCRIPT_EOF
+chmod +x /usr/local/bin/run-windows-app
+
+# =============================================================================
+# 7. Register .exe MIME type handler so Thunar opens .exe files with Wine
+# =============================================================================
+echo "[wine-setup] Registering .exe MIME type handler..."
+
+# Create the MIME XML definition for application/x-ms-dos-executable
+mkdir -p /usr/share/mime/packages
+cat > /usr/share/mime/packages/pavitra-wine.xml << 'MIME_EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-ms-dos-executable">
+    <comment>Windows Executable</comment>
+    <glob pattern="*.exe"/>
+    <glob pattern="*.EXE"/>
+    <glob pattern="*.msi"/>
+    <glob pattern="*.MSI"/>
+  </mime-type>
+</mime-info>
+MIME_EOF
+
+# Create a .desktop file that acts as the handler for Windows executables
+mkdir -p /usr/share/applications
+cat > /usr/share/applications/wine-run.desktop << 'DESKTOP_EOF'
+[Desktop Entry]
+Name=Wine Windows Compatibility Layer
+Comment=Run Windows applications on Linux
+Exec=run-windows-app %f
+Icon=wine
+Type=Application
+Categories=System;Emulator;
+MimeType=application/x-ms-dos-executable;application/x-msi;
+NoDisplay=true
+DESKTOP_EOF
+
+# Update MIME database to register the new type
+update-mime-database /usr/share/mime || true
+update-desktop-database /usr/share/applications || true
+
+# =============================================================================
+# 8. Install xvfb for headless Wine operations (optional but helpful)
+# =============================================================================
+apt-get install -y xvfb || true
+
+echo ""
+echo "[wine-setup] Wine setup complete!"
+echo "[wine-setup]   - Wine installed"
+echo "[wine-setup]   - Winetricks installed"
+echo "[wine-setup]   - Default prefix skeleton: /etc/skel/.wine"
+echo "[wine-setup]   - Launcher: /usr/local/bin/run-windows-app"
+echo "[wine-setup]   - .exe MIME handler registered"

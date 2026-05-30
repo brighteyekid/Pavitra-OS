@@ -1,0 +1,180 @@
+================================================================================
+PAVITRA OS 1.0 — WINDOWS APPLICATION COMPATIBILITY (WINE)
+================================================================================
+
+Pavitra OS uses Wine to run Windows applications (.exe, .msi) natively on Linux.
+Wine is NOT an emulator — it reimplements the Windows API as a compatibility layer,
+so Windows applications run directly on the Linux kernel with full performance.
+
+────────────────────────────────────────────────────────────────────────────────
+1. WHAT IS WINE?
+────────────────────────────────────────────────────────────────────────────────
+
+Wine (Wine Is Not an Emulator) is a free, open-source project that implements
+the Windows API on Linux. When you run a .exe file with Wine:
+
+  - The Windows binary runs directly on the CPU (no emulation overhead)
+  - Wine translates Windows system calls into Linux system calls
+  - Windows DLLs are replaced with open-source reimplementations
+  - DirectX calls are translated to Vulkan/OpenGL
+
+Wine supports:
+  - 32-bit and 64-bit Windows executables (.exe)
+  - Windows Installer packages (.msi)
+  - Windows programs requiring DirectX 9/10/11 (via DXVK, if installed)
+  - Most common Windows runtime libraries (.NET, Visual C++, etc.)
+
+────────────────────────────────────────────────────────────────────────────────
+2. RUNNING A WINDOWS APPLICATION
+────────────────────────────────────────────────────────────────────────────────
+
+METHOD 1 — Double-click in Thunar (file manager):
+  Open Thunar, navigate to your .exe file, and double-click it.
+  Wine will automatically launch the application.
+
+METHOD 2 — Using the run-windows-app command:
+  Open a terminal and run:
+    run-windows-app /path/to/program.exe
+    run-windows-app /path/to/installer.msi
+
+METHOD 3 — Direct wine command:
+    wine /path/to/program.exe
+    wine /path/to/installer.msi
+
+METHOD 4 — Pavitra App Runner (drag-and-drop):
+  Open "Pavitra App Runner" from the dock, then drag your .exe file onto
+  the drop zone. It will be detected automatically and launched with Wine.
+
+────────────────────────────────────────────────────────────────────────────────
+3. THE WINE PREFIX
+────────────────────────────────────────────────────────────────────────────────
+
+Each Wine installation uses a "prefix" — a directory that acts like a virtual
+Windows installation, containing:
+
+  - A simulated C: drive (drive_c/)
+  - Windows registry files (system.reg, user.reg)
+  - Installed Windows applications
+  - Windows DLLs and system files
+
+Your default Wine prefix is at: ~/.wine
+
+To use a separate prefix for a specific application (recommended for isolation):
+  WINEPREFIX=~/.wine-myapp wine /path/to/program.exe
+
+This keeps different applications' settings, DLLs, and registries isolated
+from each other.
+
+────────────────────────────────────────────────────────────────────────────────
+4. INSTALLING WINDOWS RUNTIMES WITH WINETRICKS
+────────────────────────────────────────────────────────────────────────────────
+
+Many Windows applications require additional runtimes like:
+  - Microsoft .NET Framework
+  - Visual C++ Redistributables (vcrun2019, vcrun2022, etc.)
+  - DirectX (d3dx9, d3dx11)
+  - Windows Media Player (wmp11)
+
+Use winetricks to install these:
+
+  winetricks vcrun2019       — Visual C++ 2019 Redistributable
+  winetricks dotnet48        — .NET Framework 4.8
+  winetricks d3dx9           — DirectX 9
+  winetricks d3dcompiler_47  — DirectX shader compiler
+
+To open the winetricks GUI:
+  winetricks --gui
+
+────────────────────────────────────────────────────────────────────────────────
+5. PLAYONLINUX — GRAPHICAL WINE MANAGER
+────────────────────────────────────────────────────────────────────────────────
+
+PlayOnLinux provides a graphical interface for managing multiple Wine prefixes
+and installing popular Windows applications with automatic configuration.
+
+Launch it from:
+  - Application menu → Wine → PlayOnLinux
+  - Terminal: playonlinux
+
+PlayOnLinux maintains a database of installation scripts for popular software
+(Adobe Reader, Steam, Office, games, etc.) that automatically configure Wine
+with the correct settings for each application.
+
+────────────────────────────────────────────────────────────────────────────────
+6. WINE CONFIGURATION
+────────────────────────────────────────────────────────────────────────────────
+
+To configure Wine settings for the default prefix:
+  winecfg
+
+In winecfg you can change:
+  - Windows version (XP, 7, 10, 11) — default is Windows 10
+  - Screen resolution (DPI)
+  - Audio driver
+  - Library overrides (force native or built-in DLLs)
+  - Drive mappings
+
+────────────────────────────────────────────────────────────────────────────────
+7. COMMON WINE COMMANDS
+────────────────────────────────────────────────────────────────────────────────
+
+  wine program.exe             — Run a Windows executable
+  wine program.exe /S          — Silent install (many installers accept /S)
+  wine uninstaller             — Open Windows Add/Remove Programs
+  wine regedit                 — Open Windows Registry Editor
+  wine cmd                     — Open a Windows command prompt (cmd.exe)
+  wine notepad                 — Open Windows Notepad (built into Wine)
+  wine explorer                — Open Wine's file browser
+  winecfg                      — Wine configuration GUI
+  wineserver -k                — Kill all running Wine processes
+
+────────────────────────────────────────────────────────────────────────────────
+8. TROUBLESHOOTING WINE
+────────────────────────────────────────────────────────────────────────────────
+
+PROBLEM: Application opens then immediately closes
+  → Try: WINEDEBUG=warn+all wine program.exe 2>&1 | head -100
+    to see what errors Wine is reporting.
+
+PROBLEM: "msvcp140.dll not found" or similar DLL errors
+  → Run: winetricks vcrun2019  (or the appropriate runtime)
+
+PROBLEM: Application requires .NET Framework
+  → Run: winetricks dotnet48
+
+PROBLEM: Graphics glitches or black screen
+  → Try running with: LIBGL_ALWAYS_SOFTWARE=1 wine program.exe
+  → Or install DXVK for better DirectX support:
+    winetricks dxvk
+
+PROBLEM: Application is very slow
+  → Try DXVK (DirectX → Vulkan translation layer):
+    winetricks dxvk
+  → Ensure you have hardware-accelerated graphics drivers installed.
+
+PROBLEM: 32-bit application won't run
+  → Ensure i386 architecture is enabled:
+    sudo dpkg --add-architecture i386 && sudo apt update
+    sudo apt install wine32
+
+USEFUL ENVIRONMENT VARIABLES:
+  WINEDEBUG=-all          — Suppress all debug output
+  WINEDEBUG=warn+all      — Show warnings only
+  WINEPREFIX=~/.wine-app  — Use a different prefix
+  WINEARCH=win32          — Force 32-bit Wine prefix (for 32-bit-only apps)
+
+────────────────────────────────────────────────────────────────────────────────
+9. WINE COMPATIBILITY DATABASE
+────────────────────────────────────────────────────────────────────────────────
+
+Before running a Windows application, check if it works with Wine:
+  https://appdb.winehq.org/
+
+The database contains user reports for thousands of applications, with ratings:
+  Platinum — Works perfectly out of the box
+  Gold     — Works with minor issues or tweaks
+  Silver   — Works with significant workarounds
+  Bronze   — Partially functional
+  Garbage  — Does not work
+
+================================================================================

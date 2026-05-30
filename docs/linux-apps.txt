@@ -1,0 +1,161 @@
+================================================================================
+PAVITRA OS 1.0 — LINUX APPLICATIONS (NATIVE, APPIMAGE, FLATPAK)
+================================================================================
+
+This document covers running native Linux applications in three forms:
+  1. Native ELF binaries (32-bit and 64-bit)
+  2. AppImage portable applications
+  3. Flatpak sandboxed applications from Flathub
+
+────────────────────────────────────────────────────────────────────────────────
+1. NATIVE LINUX ELF BINARIES
+────────────────────────────────────────────────────────────────────────────────
+
+Pavitra OS is a 64-bit Linux system. Native Linux ELF binaries run directly
+on the kernel with no compatibility layer.
+
+RUNNING A BINARY:
+  chmod +x /path/to/binary    — Make it executable (if not already)
+  /path/to/binary             — Run it
+
+BOTH 32-BIT AND 64-BIT ELF ARE SUPPORTED:
+  Pavitra OS has the i386 architecture enabled and includes the multilib
+  compatibility libraries:
+    libc6-i386       — 32-bit C library
+    lib32stdc++6     — 32-bit C++ standard library
+    lib32gcc-s1      — 32-bit GCC runtime
+
+  Most 32-bit Linux programs will run without additional setup.
+
+CHECKING IF A BINARY IS 32 OR 64-BIT:
+  file /path/to/binary
+  → "ELF 64-bit LSB executable"  → runs natively
+  → "ELF 32-bit LSB executable"  → runs via 32-bit compatibility layer
+
+MISSING LIBRARY ERRORS:
+  If a binary complains about a missing shared library:
+    ldd /path/to/binary         — list all required libraries
+    sudo apt install <library>  — install the missing one
+
+  For 32-bit library errors (libXYZ.so.N: cannot open):
+    sudo apt install libXYZ1:i386
+
+────────────────────────────────────────────────────────────────────────────────
+2. APPIMAGE APPLICATIONS
+────────────────────────────────────────────────────────────────────────────────
+
+AppImages are self-contained Linux applications that bundle all their
+dependencies into a single file. No installation is needed.
+
+RUNNING AN APPIMAGE:
+
+  METHOD 1 — Using appimage-run:
+    appimage-run /path/to/App.AppImage
+
+  METHOD 2 — Make executable and run directly:
+    chmod +x /path/to/App.AppImage
+    /path/to/App.AppImage
+
+  METHOD 3 — Pavitra App Runner:
+    Drag the .AppImage file onto the App Runner window in the dock.
+
+  METHOD 4 — Double-click in Thunar:
+    If the file is marked executable, double-click it in the file manager.
+
+APPIMAGE REQUIREMENTS:
+  AppImages use FUSE (Filesystem in Userspace) to mount themselves.
+  FUSE is pre-installed on Pavitra OS. If you see a FUSE error:
+    sudo modprobe fuse
+    sudo adduser $USER fuse  (then log out and back in)
+
+MAKING APPIMAGES PERSISTENT:
+  To keep an AppImage accessible from the app menu, copy it to ~/Applications/:
+    mkdir -p ~/Applications
+    cp MyApp.AppImage ~/Applications/
+    chmod +x ~/Applications/MyApp.AppImage
+
+  Some AppImages create a .desktop file when first run (with AppImageLauncher).
+  If they don't, you can create one manually:
+
+    cat > ~/.local/share/applications/myapp.desktop << EOF
+    [Desktop Entry]
+    Name=My App
+    Exec=/home/$USER/Applications/MyApp.AppImage
+    Icon=application-x-executable
+    Type=Application
+    Categories=Utility;
+    EOF
+
+FINDING APPIMAGE APPLICATIONS:
+  - https://appimage.github.io/        — curated AppImage directory
+  - https://github.com/AppImage/       — AppImage project
+  - Many applications offer AppImage downloads on their official websites
+
+────────────────────────────────────────────────────────────────────────────────
+3. FLATPAK APPLICATIONS (FLATHUB)
+────────────────────────────────────────────────────────────────────────────────
+
+Flatpak provides sandboxed, distribution-independent application delivery.
+Flathub (https://flathub.org/) is the main repository with thousands of apps.
+
+Pavitra OS has Flatpak pre-installed with the Flathub remote configured.
+
+INSTALLING FLATPAK APPS — GUI:
+  Open GNOME Software from the dock.
+  Switch to the "Explore" tab and browse or search.
+  Click "Install" — the app downloads and installs automatically.
+
+INSTALLING FLATPAK APPS — TERMINAL:
+  flatpak install flathub com.spotify.Client    — install Spotify
+  flatpak install flathub org.videolan.VLC      — install VLC
+  flatpak install flathub com.discordapp.Discord — install Discord
+
+RUNNING INSTALLED FLATPAK APPS:
+  flatpak run com.spotify.Client
+  Or: find it in the Application Menu (it appears automatically after install)
+
+SEARCHING FOR APPS:
+  flatpak search spotify
+  flatpak search browser
+
+MANAGING INSTALLED FLATPAKS:
+  flatpak list                          — list installed apps
+  flatpak update                        — update all installed apps
+  flatpak uninstall com.spotify.Client  — remove an app
+  flatpak uninstall --unused            — remove unused runtimes
+
+FLATPAK PERMISSIONS:
+  Flatpak apps run in sandboxes with restricted access. To view or change
+  permissions for an installed app, use Flatseal:
+    flatpak install flathub com.github.tchx84.Flatseal
+    flatpak run com.github.tchx84.Flatseal
+
+  Or from the terminal:
+    flatpak override --user --filesystem=home com.example.App
+
+ADDING OTHER FLATPAK REMOTES:
+  # KDE Neon extra apps
+  flatpak remote-add --if-not-exists kdeapps \
+    https://distribute.kde.org/kdeapps.flatpakrepo
+
+  # GNOME Nightly (unstable)
+  flatpak remote-add --if-not-exists gnome-nightly \
+    https://nightly.gnome.org/gnome-nightly.flatpakrepo
+
+────────────────────────────────────────────────────────────────────────────────
+4. CHOOSING THE RIGHT FORMAT
+────────────────────────────────────────────────────────────────────────────────
+
+  ┌──────────────────┬──────────────────────────────────────────────────────┐
+  │ Format           │ Best when...                                         │
+  ├──────────────────┼──────────────────────────────────────────────────────┤
+  │ Native ELF       │ App is already compiled for Linux. Fastest option.  │
+  ├──────────────────┼──────────────────────────────────────────────────────┤
+  │ Flatpak          │ App is on Flathub, you want auto-updates, sandbox   │
+  ├──────────────────┼──────────────────────────────────────────────────────┤
+  │ AppImage         │ Portable, no install, run from USB or any directory  │
+  ├──────────────────┼──────────────────────────────────────────────────────┤
+  │ .deb             │ Native Debian package with system integration        │
+  └──────────────────┴──────────────────────────────────────────────────────┘
+
+================================================================================

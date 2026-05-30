@@ -1,0 +1,413 @@
+#!/usr/bin/env bash
+# =============================================================================
+# desktop-setup.hook.chroot — Pavitra OS Desktop Customization
+# Phase 7 & 8: XFCE4 theming, wallpaper, user, hostname, ufw, zram, etc.
+# =============================================================================
+set -e
+set -x
+
+echo "=============================================="
+echo " Pavitra OS — Desktop Setup Hook"
+echo "=============================================="
+
+# =============================================================================
+# 1. Install theme and icon packages
+# =============================================================================
+apt-get update -y
+apt-get install -y \
+    papirus-icon-theme \
+    greybird-gtk-theme \
+    arc-theme \
+    numix-gtk-theme \
+    fonts-noto \
+    fonts-noto-cjk \
+    fonts-noto-color-emoji \
+    fonts-roboto \
+    lightdm \
+    lightdm-gtk-greeter \
+    lightdm-gtk-greeter-settings || true
+
+# =============================================================================
+# 2. Configure LightDM greeter to show Pavitra OS branding
+# =============================================================================
+mkdir -p /etc/lightdm
+cat > /etc/lightdm/lightdm-gtk-greeter.conf << 'EOF'
+[greeter]
+background = /usr/share/pavitra-os/wallpaper.png
+theme-name = Greybird-dark
+icon-theme-name = Papirus-Dark
+font-name = Noto Sans 11
+indicators = ~host;~spacer;~clock;~spacer;~power
+clock-format = %A, %B %d  %H:%M
+position = 50%,center 50%,center
+panel-position = top
+EOF
+
+cat > /etc/lightdm/lightdm.conf << 'EOF'
+[Seat:*]
+greeter-session=lightdm-gtk-greeter
+user-session=xfce
+autologin-guest=false
+autologin-user=pavitra
+autologin-user-timeout=0
+EOF
+
+# =============================================================================
+# 3. Install Pavitra OS wallpaper and logo
+#    Real assets are pre-placed by config/includes.chroot overlay.
+#    Fall back to procedural generation only if missing.
+# =============================================================================
+mkdir -p /usr/share/pavitra-os
+mkdir -p /usr/share/pixmaps
+
+if [ -f /usr/share/pavitra-os/wallpaper.png ]; then
+    echo "[desktop-setup] Using bundled wallpaper (includes.chroot)."
+else
+    echo "[desktop-setup] Generating fallback wallpaper..."
+    python3 << 'PYEOF'
+import sys, math, random
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except ImportError:
+    import subprocess
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+    from PIL import Image, ImageDraw, ImageFont
+
+W, H = 1920, 1080
+img = Image.new("RGB", (W, H), color=(10, 14, 31))
+draw = ImageDraw.Draw(img)
+GRID = 80
+for x in range(0, W, GRID):
+    draw.line([(x, 0), (x, H)], fill=(18, 25, 55), width=1)
+for y in range(0, H, GRID):
+    draw.line([(0, y), (W, y)], fill=(18, 25, 55), width=1)
+random.seed(42)
+for _ in range(80):
+    sx = random.randrange(W//2 // GRID, W // GRID) * GRID
+    sy = random.randrange(0, H // GRID) * GRID
+    length = random.randint(2, 5) * GRID
+    if random.random() > 0.5:
+        draw.line([(sx, sy), (sx + length, sy)], fill=(0, 60, 140), width=1)
+    else:
+        draw.line([(sx, sy), (sx, sy + length)], fill=(0, 60, 140), width=1)
+cx, cy = W - 200, 150
+for r in range(60, 360, 60):
+    draw.ellipse([cx-r, cy-r, cx+r, cy+r], outline=(40, 60, 120), width=1)
+draw.rectangle([0, H-3, W, H], fill=(0, 180, 220))
+try:
+    font_lg = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSans-Bold.ttf", 80)
+    font_sm = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf", 24)
+    font_xs = ImageFont.truetype("/usr/share/fonts/truetype/noto/NotoSans-Regular.ttf", 18)
+except:
+    font_lg = font_sm = font_xs = ImageFont.load_default()
+title = "PAVITRA OS"
+bb = draw.textbbox((0,0), title, font=font_lg)
+tw, th = bb[2]-bb[0], bb[3]-bb[1]
+tx, ty = 120, (H - th) // 2 - 20
+for off in [6, 4, 2]:
+    draw.text((tx-off, ty-off), title, font=font_lg, fill=(0, 100, 200))
+draw.text((tx, ty), title, font=font_lg, fill=(235, 242, 255))
+draw.rectangle([tx, ty+th+8, tx+tw, ty+th+12], fill=(0, 210, 255))
+draw.text((tx, ty+th+22), "Run Everything. Pure Linux.", font=font_sm, fill=(100, 140, 200))
+draw.text((tx, ty+th+52), "Based on Debian 12 Bookworm", font=font_xs, fill=(60, 85, 130))
+img.save("/usr/share/pavitra-os/wallpaper.png", "PNG")
+print("Fallback wallpaper generated.")
+PYEOF
+fi
+
+# Logo: use bundled or create minimal placeholder
+if [ ! -f /usr/share/pavitra-os/logo.png ]; then
+    echo "[desktop-setup] Logo missing, creating placeholder..."
+    python3 -c "
+from PIL import Image, ImageDraw
+img = Image.new('RGBA', (256,256), (10,14,31,255))
+d = ImageDraw.Draw(img)
+d.ellipse([20,20,236,236], fill=(74,63,200,255), outline=(0,212,255,255), width=4)
+img.save('/usr/share/pavitra-os/logo.png')
+" 2>/dev/null || true
+fi
+cp /usr/share/pavitra-os/logo.png /usr/share/pixmaps/pavitra-os.png 2>/dev/null || true
+
+
+# =============================================================================
+# 4. Create default XFCE4 configuration skeleton (goes into /etc/skel)
+# =============================================================================
+mkdir -p /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml
+
+# --- Set wallpaper via xfconf XML ---
+cat > /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-desktop" version="1.0">
+  <property name="backdrop" type="empty">
+    <property name="screen0" type="empty">
+      <property name="monitor0" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="/usr/share/pavitra-os/wallpaper.png"/>
+        </property>
+      </property>
+    </property>
+  </property>
+</channel>
+EOF
+
+# --- XFCE4 Appearance (theme + icons + font) ---
+cat > /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xsettings.xml << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xsettings" version="1.0">
+  <property name="Net" type="empty">
+    <property name="ThemeName" type="string" value="Greybird-dark"/>
+    <property name="IconThemeName" type="string" value="Papirus-Dark"/>
+  </property>
+  <property name="Gtk" type="empty">
+    <property name="FontName" type="string" value="Noto Sans 10"/>
+    <property name="MonospaceFontName" type="string" value="Noto Sans Mono 10"/>
+    <property name="CursorThemeName" type="string" value="Adwaita"/>
+    <property name="DecorationLayout" type="string" value="menu:minimize,maximize,close"/>
+  </property>
+</channel>
+EOF
+
+# --- Window manager theme ---
+cat > /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfwm4.xml << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfwm4" version="1.0">
+  <property name="general" type="empty">
+    <property name="theme" type="string" value="Greybird-dark"/>
+    <property name="title_font" type="string" value="Noto Sans Bold 10"/>
+    <property name="button_layout" type="string" value="O|HMC"/>
+    <property name="use_compositing" type="bool" value="true"/>
+    <property name="frame_opacity" type="int" value="95"/>
+  </property>
+</channel>
+EOF
+
+# --- XFCE4 Panel layout (top bar + bottom dock) ---
+cat > /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-panel" version="1.0">
+  <property name="configver" type="int" value="2"/>
+  <property name="panels" type="array">
+    <value type="int" value="1"/>
+    <value type="int" value="2"/>
+  </property>
+
+  <!-- Panel 1: Top bar -->
+  <property name="panel-1" type="empty">
+    <property name="position" type="string" value="p=6;x=0;y=0"/>
+    <property name="length" type="uint" value="100"/>
+    <property name="position-locked" type="bool" value="true"/>
+    <property name="size" type="uint" value="28"/>
+    <property name="plugin-ids" type="array">
+      <value type="int" value="1"/>
+      <value type="int" value="2"/>
+      <value type="int" value="3"/>
+      <value type="int" value="4"/>
+      <value type="int" value="5"/>
+    </property>
+  </property>
+
+  <!-- Panel 2: Bottom dock -->
+  <property name="panel-2" type="empty">
+    <property name="position" type="string" value="p=10;x=0;y=0"/>
+    <property name="length" type="uint" value="70"/>
+    <property name="position-locked" type="bool" value="true"/>
+    <property name="size" type="uint" value="48"/>
+    <property name="plugin-ids" type="array">
+      <value type="int" value="11"/>
+      <value type="int" value="12"/>
+      <value type="int" value="13"/>
+      <value type="int" value="14"/>
+      <value type="int" value="15"/>
+      <value type="int" value="16"/>
+    </property>
+  </property>
+
+  <property name="plugins" type="empty">
+    <!-- Top bar plugins -->
+    <property name="plugin-1" type="string" value="applicationsmenu"/>
+    <property name="plugin-2" type="string" value="separator">
+      <property name="expand" type="bool" value="false"/>
+    </property>
+    <property name="plugin-3" type="string" value="tasklist"/>
+    <property name="plugin-4" type="string" value="separator">
+      <property name="expand" type="bool" value="true"/>
+    </property>
+    <property name="plugin-5" type="string" value="clock">
+      <property name="digital-format" type="string" value="%A %b %d  %H:%M"/>
+    </property>
+
+    <!-- Bottom dock launchers -->
+    <property name="plugin-11" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="thunar.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-12" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="xfce4-terminal.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-13" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="firefox-esr.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-14" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="xfce4-settings-manager.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-15" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="pavitra-app-runner.desktop"/>
+      </property>
+    </property>
+    <property name="plugin-16" type="string" value="launcher">
+      <property name="items" type="array">
+        <value type="string" value="org.gnome.Software.desktop"/>
+      </property>
+    </property>
+  </property>
+</channel>
+EOF
+
+# =============================================================================
+# 5. System configuration — hostname, timezone, user, groups
+# =============================================================================
+echo "pavitra-os" > /etc/hostname
+
+cat > /etc/hosts << 'EOF'
+127.0.0.1   localhost
+127.0.1.1   pavitra-os
+::1         localhost ip6-localhost ip6-loopback
+ff02::1     ip6-allnodes
+ff02::2     ip6-allrouters
+EOF
+
+# Set default timezone to UTC (user can change at first boot)
+ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+echo "UTC" > /etc/timezone
+
+# Create default user 'pavitra' with password 'pavitra'
+useradd -m -s /bin/bash -c "Pavitra User" pavitra 2>/dev/null || true
+echo "pavitra:pavitra" | chpasswd
+usermod -aG sudo,audio,video,plugdev,netdev pavitra 2>/dev/null || true
+
+# Copy the XFCE4 skel configs to the pavitra user home
+cp -r /etc/skel/.config /home/pavitra/ 2>/dev/null || true
+chown -R pavitra:pavitra /home/pavitra/ 2>/dev/null || true
+
+# =============================================================================
+# 6. Configure UFW firewall
+# =============================================================================
+apt-get install -y ufw
+ufw --force reset
+ufw default deny incoming
+ufw default allow outgoing
+ufw --force enable
+systemctl enable ufw 2>/dev/null || true
+
+# =============================================================================
+# 7. Configure unattended-upgrades (security updates only)
+# =============================================================================
+apt-get install -y unattended-upgrades apt-listchanges
+cat > /etc/apt/apt.conf.d/50unattended-upgrades << 'EOF'
+Unattended-Upgrade::Allowed-Origins {
+    "Debian:${distro_codename}-security";
+};
+Unattended-Upgrade::AutoFixInterruptedDpkg "true";
+Unattended-Upgrade::MinimalSteps "true";
+Unattended-Upgrade::Remove-Unused-Dependencies "true";
+Unattended-Upgrade::Automatic-Reboot "false";
+EOF
+
+cat > /etc/apt/apt.conf.d/20auto-upgrades << 'EOF'
+APT::Periodic::Update-Package-Lists "1";
+APT::Periodic::Unattended-Upgrade "1";
+EOF
+
+# =============================================================================
+# 8. Configure zram-tools for compressed swap in RAM
+# =============================================================================
+apt-get install -y zram-tools || true
+cat > /etc/default/zramswap << 'EOF'
+ALGO=lz4
+PERCENT=50
+PRIORITY=100
+EOF
+systemctl enable zramswap 2>/dev/null || true
+
+# =============================================================================
+# 9. Install thermald and cpupower, set schedutil governor
+# =============================================================================
+apt-get install -y thermald cpufrequtils || true
+systemctl enable thermald 2>/dev/null || true
+
+cat > /etc/systemd/system/pavitra-cpugovernor.service << 'EOF'
+[Unit]
+Description=Pavitra OS — Set CPU governor to schedutil
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'for cpu in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do echo schedutil > "$cpu" 2>/dev/null || true; done'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+systemctl enable pavitra-cpugovernor.service 2>/dev/null || true
+
+# =============================================================================
+# 10. Write /etc/pavitra-os-release
+# =============================================================================
+cat > /etc/pavitra-os-release << 'EOF'
+NAME=Pavitra OS
+VERSION=1.0
+ID=pavitra
+BASE=debian
+PRETTY_NAME=Pavitra OS 1.0
+HOME_URL=https://pavitra-os.local
+EOF
+
+# Also append to /etc/os-release
+cat >> /etc/os-release << 'EOF'
+
+# Pavitra OS Overlay
+PAVITRA_VERSION=1.0
+EOF
+
+# =============================================================================
+# 11. Write LEGAL.txt
+# =============================================================================
+mkdir -p /usr/share/pavitra-os
+cat > /usr/share/pavitra-os/LEGAL.txt << 'EOF'
+PAVITRA OS — LEGAL NOTICE
+==========================
+
+Pavitra OS does NOT include any proprietary software from Apple Inc.,
+Microsoft Corporation, or any other company.
+
+The following open-source compatibility layers are included:
+
+  * Wine (https://www.winehq.org/) — LGPL license
+    Wine Is Not an Emulator. Wine reimplements the Windows API on Linux.
+    It does NOT contain any Microsoft code.
+
+  * Darling (https://www.darlinghq.org/) — LGPL license
+    Darling reimplements the macOS/Darwin API on Linux.
+    It does NOT contain any Apple code.
+
+Users are solely responsible for:
+  - Ensuring they have the legal right to run any Windows applications
+  - Ensuring they have the legal right to run any macOS applications
+  - Complying with all applicable software licenses
+
+Pavitra OS is based on Debian GNU/Linux (https://www.debian.org/).
+All included packages are distributed under their respective open-source licenses.
+EOF
+
+echo ""
+echo "[desktop-setup] Desktop setup complete!"

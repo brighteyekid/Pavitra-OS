@@ -1,0 +1,139 @@
+================================================================================
+PAVITRA OS 1.0 — GETTING STARTED
+================================================================================
+
+Congratulations on booting Pavitra OS! This guide walks you through your first
+steps after installation or after booting the live environment.
+
+────────────────────────────────────────────────────────────────────────────────
+1. LOGGING IN
+────────────────────────────────────────────────────────────────────────────────
+
+The LightDM login screen greets you on boot.
+
+  Default username : pavitra
+  Default password : pavitra
+
+We strongly recommend changing the password on first boot:
+
+  1. Open Terminal (from the dock or Ctrl+Alt+T)
+  2. Run: passwd
+  3. Enter your current password (pavitra), then your new password twice.
+
+To create additional users:
+
+  sudo adduser <username>
+  sudo usermod -aG sudo,audio,video,plugdev,netdev <username>
+
+────────────────────────────────────────────────────────────────────────────────
+2. THE DESKTOP
+────────────────────────────────────────────────────────────────────────────────
+
+Pavitra OS uses the XFCE4 desktop environment — lightweight, fast, and stable.
+
+  Top panel      : Application menu (top-left), window list (centre), clock
+  Bottom dock    : Pinned launchers for common apps
+  Right-click    : Desktop context menu for settings and app launching
+  Super key      : Opens the application finder
+  Ctrl+Alt+T     : Opens a terminal (if set up — or use the dock)
+
+────────────────────────────────────────────────────────────────────────────────
+3. CONNECTING TO THE INTERNET
+────────────────────────────────────────────────────────────────────────────────
+
+NetworkManager is pre-installed and runs automatically.
+
+  Wired (Ethernet) : Plug in — it connects automatically via DHCP.
+
+  Wi-Fi            : Click the network icon in the system tray (top-right area
+                     of the panel), select your network, and enter the password.
+
+  To manage connections from the terminal:
+    nmcli device status              — list network devices
+    nmcli device wifi list           — list available Wi-Fi networks
+    nmcli device wifi connect "SSID" password "password"
+
+────────────────────────────────────────────────────────────────────────────────
+4. UPDATING THE SYSTEM
+────────────────────────────────────────────────────────────────────────────────
+
+Security updates are applied automatically via unattended-upgrades (Debian
+security repository only). To update all packages manually:
+
+  sudo apt update && sudo apt upgrade
+
+To install any Debian package:
+
+  sudo apt install <package-name>
+
+────────────────────────────────────────────────────────────────────────────────
+5. RUNNING APPLICATIONS — QUICK OVERVIEW
+────────────────────────────────────────────────────────────────────────────────
+
+Pavitra OS can run applications from four ecosystems:
+
+  ┌─────────────────┬───────────────────────────────────────────────────────┐
+  │ Format          │ How to run it                                         │
+  ├─────────────────┼───────────────────────────────────────────────────────┤
+  │ Windows (.exe)  │ run-windows-app program.exe  — or double-click in     │
+  │                 │ Thunar (file manager)                                  │
+  ├─────────────────┼───────────────────────────────────────────────────────┤
+  │ macOS (.app)    │ run-macos-app App.app  — experimental, see            │
+  │                 │ macos-compat.txt for limitations                       │
+  ├─────────────────┼───────────────────────────────────────────────────────┤
+  │ Debian (.deb)   │ install-deb package.deb  — or double-click in Thunar │
+  ├─────────────────┼───────────────────────────────────────────────────────┤
+  │ AppImage        │ appimage-run App.AppImage  — or make executable and   │
+  │                 │ double-click                                           │
+  ├─────────────────┼───────────────────────────────────────────────────────┤
+  │ Linux ELF       │ Run directly: ./binary  — both 32-bit and 64-bit     │
+  ├─────────────────┼───────────────────────────────────────────────────────┤
+  │ Flatpak         │ Install from GNOME Software (in dock) or via:         │
+  │                 │ flatpak install flathub <app-id>                       │
+  └─────────────────┴───────────────────────────────────────────────────────┘
+
+  The easiest method is the Pavitra App Runner (in the dock):
+  drag and drop ANY file onto it and it auto-detects the format.
+
+────────────────────────────────────────────────────────────────────────────────
+6. INCLUDED APPLICATIONS
+────────────────────────────────────────────────────────────────────────────────
+
+  Web browser      : Firefox ESR
+  Office suite     : LibreOffice (Writer, Calc, Impress, Draw)
+  Image editor     : GIMP
+  Media player     : VLC
+  File manager     : Thunar
+  Terminal         : XFCE4 Terminal
+  Text editor      : Mousepad
+  Archive manager  : File Roller
+  Image viewer     : Ristretto
+  PDF viewer       : Evince
+  Torrent client   : Transmission
+  Disk manager     : GParted
+  System monitor   : htop (terminal), XFCE4 Task Manager (GUI)
+  Software store   : GNOME Software (with Flatpak/Flathub support)
+
+────────────────────────────────────────────────────────────────────────────────
+7. FIRST-BOOT RECOMMENDATIONS
+────────────────────────────────────────────────────────────────────────────────
+
+  a) Change the default password         → passwd
+  b) Connect to your network             → Network icon in tray
+  c) Run system updates                  → sudo apt update && sudo apt upgrade
+  d) Configure timezone if needed        → sudo dpkg-reconfigure tzdata
+  e) Set your locale                     → sudo dpkg-reconfigure locales
+  f) Explore the App Runner              → Click "Pavitra App Runner" in dock
+  g) Browse Flatpak apps                 → Open GNOME Software
+
+────────────────────────────────────────────────────────────────────────────────
+8. GETTING HELP
+────────────────────────────────────────────────────────────────────────────────
+
+  Documentation    : /usr/share/pavitra-os/docs/  (this directory)
+  Debian wiki      : https://wiki.debian.org/
+  Wine AppDB       : https://appdb.winehq.org/
+  Darling status   : https://www.darlinghq.org/status/
+  Flathub apps     : https://flathub.org/
+
+================================================================================

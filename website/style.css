@@ -1,0 +1,234 @@
+/* ==========================================================================
+   RESET & GLOBALS
+   ========================================================================== */
+:root {
+    --bg:         #0A0E1F;
+    --cyan:       #00D2FF;
+    --cyan-glow:  rgba(0, 210, 255, 0.35);
+    --fg:         #FFFFFF;
+    --fg-muted:   #8C99B2;
+    --border:     rgba(255, 255, 255, 0.08);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+    width: 100%;
+    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--fg);
+    overflow-x: hidden;
+    /* Hidden scrollbar */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar { display: none; }
+
+/* ==========================================================================
+   LOADER
+   ========================================================================== */
+.loader-wrapper {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.loader-geometry {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loader-dot {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    background: var(--cyan);
+    border-radius: 50%;
+    box-shadow: 0 0 32px var(--cyan-glow);
+}
+
+.loader-text {
+    margin-top: 40px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 6px;
+    color: var(--cyan);
+}
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+.hero-container {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+.hero-background {
+    position: absolute;
+    inset: 0;
+    background-image: url('../pavitra-os/assets/wallpaper.png');
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+}
+.hero-background::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center, rgba(10,14,31,0.35) 0%, var(--bg) 100%);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 820px;
+}
+
+.hero-logo {
+    width: 160px;
+    height: 160px;
+    object-fit: contain;
+    margin-bottom: 2.2rem;
+    filter: drop-shadow(0 0 48px rgba(0, 210, 255, 0.18));
+}
+
+.hero-title {
+    font-size: clamp(3rem, 8vw, 5.5rem);
+    font-weight: 800;
+    letter-spacing: -3px;
+    line-height: 1;
+    margin-bottom: 1rem;
+    background: linear-gradient(180deg, #fff 0%, #b0c4de 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-subtitle {
+    font-size: 1.4rem;
+    font-weight: 300;
+    color: var(--fg-muted);
+    margin-bottom: 3.5rem;
+    letter-spacing: 0.5px;
+}
+
+/* ==========================================================================
+   BUTTONS
+   ========================================================================== */
+.hero-actions {
+    display: flex;
+    gap: 1.25rem;
+    margin-bottom: 5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.btn {
+    display: inline-block;
+    text-decoration: none;
+    padding: 0.875rem 2.25rem;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: all 0.25s ease;
+}
+
+.btn-primary {
+    background: var(--cyan);
+    color: #000;
+    box-shadow: 0 0 24px var(--cyan-glow);
+}
+.btn-primary:hover {
+    background: #22DCFF;
+    box-shadow: 0 0 48px var(--cyan-glow);
+    transform: translateY(-2px);
+}
+
+.btn-secondary {
+    background: transparent;
+    color: var(--fg);
+    border: 1px solid rgba(255,255,255,0.18);
+}
+.btn-secondary:hover {
+    border-color: var(--cyan);
+    background: rgba(0, 210, 255, 0.06);
+    transform: translateY(-2px);
+}
+
+/* ==========================================================================
+   METRICS
+   ========================================================================== */
+.hero-features {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border);
+}
+
+.feature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.feature-val {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: var(--cyan);
+    line-height: 1;
+}
+
+.feature-lbl {
+    font-size: 0.75rem;
+    color: var(--fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.feature-divider {
+    width: 1px;
+    height: 36px;
+    background: var(--border);
+}
+
+/* ==========================================================================
+   FILLER (for scroll demo)
+   ========================================================================== */
+.dummy-content {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+}
+
+.dummy-content h2 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; }
+.dummy-content p  { color: var(--fg-muted); font-size: 1.1rem; max-width: 540px; }

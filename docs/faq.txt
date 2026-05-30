@@ -1,0 +1,129 @@
+================================================================================
+PAVITRA OS 1.0 — FREQUENTLY ASKED QUESTIONS (FAQ)
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+GENERAL
+────────────────────────────────────────────────────────────────────────────────
+
+Q: What is Pavitra OS?
+A: Pavitra OS is a custom Linux operating system based on Debian 12 (Bookworm)
+   that lets you run applications from four ecosystems on one machine:
+   Windows (via Wine), macOS (via Darling), Debian/Linux natively, and
+   portable AppImages and Flatpaks. It is a real, bootable OS — not a simulator.
+
+Q: Is Pavitra OS free?
+A: Yes. Pavitra OS is built entirely from open-source software. Wine and Darling
+   are both LGPL-licensed open-source projects. The OS itself is Debian-based
+   and carries no proprietary software.
+
+Q: Does Pavitra OS contain Windows or macOS software?
+A: No. Wine and Darling are clean-room reimplementations of the Windows and
+   macOS APIs. They do not contain any code from Microsoft or Apple.
+   See /usr/share/pavitra-os/LEGAL.txt for details.
+
+Q: What are the system requirements?
+A: Minimum: 2 GB RAM, 20 GB disk, x86_64 CPU (64-bit)
+   Recommended: 4 GB RAM, 40 GB disk, modern multi-core CPU, GPU with OpenGL 3.1
+   For Darling (macOS): 8 GB RAM minimum recommended.
+
+────────────────────────────────────────────────────────────────────────────────
+WINDOWS APPLICATION SUPPORT
+────────────────────────────────────────────────────────────────────────────────
+
+Q: Will all Windows applications work?
+A: Most common applications work well. Wine has excellent compatibility with
+   productivity software, creative tools, and many games. Applications that
+   rely on very low-level Windows kernel features (anti-cheat software, kernel
+   drivers, some hardware utilities) may not work.
+
+Q: How do I check if my Windows app works with Wine?
+A: Check the WineHQ AppDB: https://appdb.winehq.org/
+   Search for your application to see user reports and compatibility ratings.
+
+Q: Can I run Windows games?
+A: Many games work via Wine. For best results with DirectX games, install DXVK:
+     winetricks dxvk
+   Check ProtonDB (https://www.protondb.com/) for game-specific compatibility.
+
+Q: Does Wine run .NET applications?
+A: Yes, with the appropriate runtime installed:
+     winetricks dotnet48    — .NET Framework 4.8 (most common)
+     winetricks dotnet6     — .NET 6 (newer apps)
+
+Q: Is Wine an emulator?
+A: No. "Wine Is Not an Emulator" (that's literally what the acronym means).
+   Wine translates Windows API calls to Linux system calls — the Windows
+   code runs directly on your CPU with no performance overhead from emulation.
+
+────────────────────────────────────────────────────────────────────────────────
+MACOS APPLICATION SUPPORT
+────────────────────────────────────────────────────────────────────────────────
+
+Q: Can I really run macOS apps on Pavitra OS?
+A: In theory, yes — via Darling. In practice, macOS app support is experimental
+   and many apps fail because Darling does not yet implement all Apple frameworks.
+   Simple command-line macOS tools work best. GUI apps are hit-or-miss.
+
+Q: Why does my macOS app crash immediately?
+A: The most common reason is that the app uses Apple frameworks (AppKit,
+   CoreData, Metal, etc.) that Darling has not yet fully implemented.
+   See /usr/share/pavitra-os/docs/macos-compat.txt for details.
+
+Q: Do I need a macOS license to use macOS apps with Darling?
+A: Darling itself requires no license. However, you are responsible for ensuring
+   you have the legal right to run any macOS applications you use.
+
+Q: Can I run Apple Silicon (M1/M2/M3) macOS apps?
+A: No. Pavitra OS is x86_64 only. You need macOS apps compiled for Intel Macs.
+
+────────────────────────────────────────────────────────────────────────────────
+LINUX APPLICATION SUPPORT
+────────────────────────────────────────────────────────────────────────────────
+
+Q: Can I run 32-bit Linux programs?
+A: Yes. Pavitra OS has i386 (32-bit) architecture enabled and includes the
+   necessary compatibility libraries (libc6-i386, lib32stdc++6, etc.).
+
+Q: What is an AppImage?
+A: An AppImage is a portable, self-contained Linux application — a single file
+   that runs on any Linux distribution without installation. The app carries all
+   its own dependencies inside the AppImage file.
+
+Q: What is Flatpak?
+A: Flatpak is a sandboxed application delivery system. Apps are distributed
+   through the Flathub repository and run in isolation from the rest of the
+   system. GNOME Software (in the dock) is the GUI for managing Flatpak apps.
+
+────────────────────────────────────────────────────────────────────────────────
+SYSTEM / TECHNICAL
+────────────────────────────────────────────────────────────────────────────────
+
+Q: How do I install Pavitra OS permanently (not just live)?
+A: Use GParted to create partitions, then use debootstrap or the Debian
+   installer to install to disk. Alternatively, install a base Debian 12 system
+   and apply the Pavitra OS configuration scripts manually.
+
+Q: How do I update Pavitra OS?
+A: Run: sudo apt update && sudo apt upgrade
+   Security updates are also applied automatically via unattended-upgrades.
+
+Q: How do I change the default user password?
+A: Open a terminal and run: passwd
+   Enter your current password (pavitra), then your new password twice.
+
+Q: The build took much longer than expected. Is this normal?
+A: Yes. The Darling (macOS compatibility) build compiles a large C/C++ codebase
+   from source, which can take 30-120 minutes depending on CPU speed and RAM.
+   To speed up future builds, remove darling-setup.hook.chroot to skip macOS.
+
+Q: Can I add Pavitra OS to an existing Debian/Ubuntu installation?
+A: Yes. Copy the scripts to your system and run them individually.
+   install-deb, run-windows-app, and run-macos-app are standalone scripts.
+   Wine can be installed separately: sudo apt install wine
+
+Q: Where is the build log?
+A: /home/fox/Documents/OS/pavitra-os/build.log (on the build machine)
+   Darling build log: /var/log/pavitra-darling-build.log (inside the built OS)
+
+================================================================================

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pavitra OS</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <!-- GSAP -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+</head>
+<body>
+
+    <!-- CRAZY LOADING SCREEN -->
+    <div class="loader-wrapper">
+        <div class="loader-geometry">
+            <div class="loader-dot"></div>
+            <div class="loader-line"></div>
+            <div class="loader-circle"></div>
+        </div>
+        <div class="loader-text">INITIALIZING CORE</div>
+    </div>
+
+    <!-- HERO SECTION -->
+    <main class="hero-container">
+        <div class="hero-background"></div>
+        <div class="hero-content">
+            <img src="../pavitra-os/assets/logo.png" alt="Pavitra OS Logo" class="hero-logo">
+            <h1 class="hero-title">PAVITRA OS</h1>
+            <p class="hero-subtitle">Run Everything. Pure Linux.</p>
+            
+            <div class="hero-actions">
+                <a href="#" class="btn btn-primary">Download v1.0</a>
+                <a href="#" class="btn btn-secondary">Read Documentation</a>
+            </div>
+            
+            <div class="hero-features">
+                <div class="feature">
+                    <span class="feature-val">4</span>
+                    <span class="feature-lbl">Ecosystems</span>
+                </div>
+                <div class="feature-divider"></div>
+                <div class="feature">
+                    <span class="feature-val">0</span>
+                    <span class="feature-lbl">Bloat</span>
+                </div>
+                <div class="feature-divider"></div>
+                <div class="feature">
+                    <span class="feature-val">100%</span>
+                    <span class="feature-lbl">Control</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- CONTENT TO ENABLE SCROLLING -->
+    <section class="dummy-content">
+        <h2>Unrestricted Performance</h2>
+        <p>Windows. macOS. Linux. Run it all on a foundation built for speed.</p>
+    </section>
+
+    <script>
+        // GSAP Crazy Loader Animation
+        const tl = gsap.timeline();
+
+        // 1. Dot pulses and scales down slightly
+        tl.to(".loader-dot", {
+            scale: 0.5,
+            duration: 0.8,
+            ease: "power2.inOut",
+            yoyo: true,
+            repeat: 1
+        })
+        // 2. Dot expands into a horizontal line
+        .to(".loader-dot", {
+            width: "300px",
+            height: "2px",
+            borderRadius: "0",
+            duration: 0.6,
+            ease: "power4.inOut"
+        })
+        // 3. Line rotates and spins fast
+        .to(".loader-dot", {
+            rotation: 720,
+            duration: 1.2,
+            ease: "power3.inOut"
+        })
+        // 4. Line morphs into the sacred circle
+        .to(".loader-dot", {
+            width: "150px",
+            height: "150px",
+            borderRadius: "50%",
+            backgroundColor: "transparent",
+            border: "2px solid #00D2FF",
+            duration: 0.8,
+            ease: "expo.out"
+        }, "-=0.2")
+        // 5. Text fades out
+        .to(".loader-text", {
+            opacity: 0,
+            duration: 0.4
+        }, "-=0.4")
+        // 6. Circle scales up massively to reveal the site
+        .to(".loader-dot", {
+            scale: 50,
+            borderWidth: "1px",
+            opacity: 0,
+            duration: 1.5,
+            ease: "power4.inOut"
+        })
+        // 7. Hide the loader wrapper completely
+        .to(".loader-wrapper", {
+            autoAlpha: 0,
+            duration: 0.1
+        }, "-=0.5")
+        // 8. Animate hero elements in
+        .from(".hero-logo", {
+            y: 50,
+            opacity: 0,
+            duration: 1,
+            ease: "power3.out"
+        }, "-=0.8")
+        .from(".hero-title", {
+            y: 30,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power3.out"
+        }, "-=0.6")
+        .from(".hero-subtitle", {
+            y: 20,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power3.out"
+        }, "-=0.5")
+        .from(".hero-actions", {
+            y: 20,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power3.out"
+        }, "-=0.4")
+        .from(".hero-features", {
+            y: 20,
+            opacity: 0,
+            duration: 0.8,
+            ease: "power3.out"
+        }, "-=0.3");
+    </script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+================================================================================
+PAVITRA OS 1.0 — DESKTOP GUIDE (XFCE4)
+================================================================================
+
+Pavitra OS uses the XFCE4 desktop environment — lightweight, fast, and stable.
+This guide covers the panels, themes, keyboard shortcuts, and customisation.
+
+────────────────────────────────────────────────────────────────────────────────
+1. THE TWO PANELS
+────────────────────────────────────────────────────────────────────────────────
+
+TOP PANEL (28px, full width):
+  ┌────────────────────────────────────────────────────────────────────────┐
+  │ [App Menu] │ [Window List ........................................] │ Clock │
+  └────────────────────────────────────────────────────────────────────────┘
+
+  - App Menu     : Left-click to browse all installed applications by category
+  - Window List  : Shows all open windows; click to focus or minimise
+  - Clock        : Shows day, date, and time. Right-click to configure format.
+
+BOTTOM DOCK (48px, centred):
+  ┌──────────────────────────────────────────────────────────────────┐
+  │ [Files] [Terminal] [Firefox] [Settings] [App Runner] [Software] │
+  └──────────────────────────────────────────────────────────────────┘
+
+  Pinned launchers (click to open):
+    Files       → Thunar file manager
+    Terminal    → XFCE4 Terminal
+    Firefox     → Firefox ESR web browser
+    Settings    → XFCE4 Settings Manager
+    App Runner  → Pavitra App Runner (drag-and-drop launcher)
+    Software    → GNOME Software (Flatpak app store)
+
+CUSTOMISING PANELS:
+  Right-click any empty panel area → Panel → Panel Preferences
+  You can add/remove applets, change size, position, and transparency.
+
+────────────────────────────────────────────────────────────────────────────────
+2. THE DESKTOP
+────────────────────────────────────────────────────────────────────────────────
+
+  Right-click desktop  → Desktop context menu (apps, settings, terminal)
+  Right-click desktop  → Desktop Settings → change wallpaper, icon layout
+
+  WALLPAPER:
+    Default wallpaper: /usr/share/pavitra-os/wallpaper.png
+    To change: Right-click desktop → Desktop Settings → Background tab
+    Or: Settings Manager → Desktop
+
+────────────────────────────────────────────────────────────────────────────────
+3. THEMES AND APPEARANCE
+────────────────────────────────────────────────────────────────────────────────
+
+  Default theme     : Greybird-dark (dark GTK3 theme)
+  Default icons     : Papirus-Dark
+  Default font      : Noto Sans 10pt
+  Window decorations: Greybird-dark (via xfwm4)
+
+  TO CHANGE THEME:
+    Settings Manager → Appearance → Style tab → select a theme
+    Available themes: Greybird-dark, Arc, Arc-Dark, Numix
+
+  TO CHANGE ICON THEME:
+    Settings Manager → Appearance → Icons tab
+    Available: Papirus, Papirus-Dark, Papirus-Light, Adwaita
+
+  TO CHANGE FONT:
+    Settings Manager → Appearance → Fonts tab
+
+  TO CHANGE WINDOW THEME:
+    Settings Manager → Window Manager → Style tab
+
+────────────────────────────────────────────────────────────────────────────────
+4. KEYBOARD SHORTCUTS
+────────────────────────────────────────────────────────────────────────────────
+
+  Super / Win key          → Application Finder (type to search apps)
+  Alt+F2                   → Run dialog (type a command to run)
+  Alt+F4                   → Close current window
+  Alt+Tab                  → Switch between windows
+  Super+D                  → Show desktop (minimise all windows)
+  Ctrl+Alt+T               → Open terminal (if configured)
+  PrintScreen              → Take a screenshot
+  Alt+PrintScreen          → Screenshot of active window
+  Ctrl+Alt+L               → Lock screen
+  Ctrl+Alt+Delete          → Log out dialog
+
+  TO CUSTOMISE SHORTCUTS:
+    Settings Manager → Keyboard → Application Shortcuts tab
+
+────────────────────────────────────────────────────────────────────────────────
+5. DISPLAY SETTINGS
+────────────────────────────────────────────────────────────────────────────────
+
+  Settings Manager → Display
+  Or right-click desktop → Display Settings
+
+  Options:
+    - Change resolution and refresh rate
+    - Configure multiple monitors (extend, mirror, primary)
+    - Set display rotation
+    - Configure HiDPI scaling
+
+────────────────────────────────────────────────────────────────────────────────
+6. POWER MANAGEMENT
+────────────────────────────────────────────────────────────────────────────────
+
+  Settings Manager → Power Manager
+  Controls screen blanking, suspend, hibernate, and lid-close behaviour.
+
+  The CPU governor is set to "schedutil" at boot for balanced performance.
+  To change it temporarily:
+    sudo cpupower frequency-set -g performance  — maximum performance
+    sudo cpupower frequency-set -g powersave    — maximum battery savings
+    sudo cpupower frequency-set -g schedutil    — default (balanced)
+
+────────────────────────────────────────────────────────────────────────────────
+7. FILE MANAGER (THUNAR)
+────────────────────────────────────────────────────────────────────────────────
+
+  Thunar is the XFCE4 file manager. Key features:
+    - Left panel shows bookmarks and devices
+    - F3: toggle split view
+    - Ctrl+L: type a path directly
+    - Ctrl+H: show hidden files
+    - Right-click file → Open With → choose application
+
+  MIME TYPE HANDLERS (pre-configured):
+    .exe, .msi       → Wine (run-windows-app)
+    .deb             → GDebi package installer
+    .AppImage        → AppImage launcher
+    .app (directory) → Darling (run-macos-app)
+
+================================================================================

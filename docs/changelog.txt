@@ -1,0 +1,98 @@
+================================================================================
+PAVITRA OS 1.0 — CHANGELOG
+================================================================================
+
+────────────────────────────────────────────────────────────────────────────────
+VERSION 1.0 — Initial Release
+────────────────────────────────────────────────────────────────────────────────
+
+Base System:
+  + Debian 12 (Bookworm) minimal base via live-build
+  + Linux 6.1 LTS kernel (linux-image-amd64)
+  + systemd init system
+  + GRUB 2 bootloader with EFI and legacy BIOS support
+  + Hybrid ISO (bootable from USB via dd or DVD)
+
+Desktop Environment:
+  + XFCE4 desktop environment
+  + LightDM display manager with custom Pavitra OS greeter
+  + Custom dark wallpaper (dark circuit-board grid with PAVITRA OS title)
+  + Greybird-dark GTK3 theme
+  + Papirus-Dark icon theme
+  + Noto Sans system font
+  + PipeWire audio with WirePlumber session manager
+  + NetworkManager with nm-applet
+
+Windows Compatibility (Phase 3):
+  + WineHQ stable (wine64 + wine32 via i386 architecture)
+  + Winetricks for runtime installation (.NET, VC++, DirectX, etc.)
+  + PlayOnLinux graphical Wine manager
+  + Pre-configured Wine prefix skeleton at /etc/skel/.wine (Windows 10 mode)
+  + run-windows-app launcher script at /usr/local/bin/run-windows-app
+  + .exe and .msi MIME type handler in Thunar (double-click to launch)
+
+Debian Package Support (Phase 4):
+  + GDebi and gdebi-gtk for graphical .deb installation
+  + install-deb launcher at /usr/local/bin/install-deb
+  + .deb MIME type handler in Thunar
+
+Linux Compatibility (Phase 5):
+  + i386 (32-bit) architecture enabled
+  + 32-bit compatibility libraries (libc6-i386, lib32stdc++6, lib32gcc-s1)
+  + binfmt-support for ELF binary registration
+  + FUSE and FUSE3 for AppImage and Flatpak
+  + Flatpak with Flathub remote pre-configured
+  + AppImage support with appimage-run launcher
+  + AppImage and .deb MIME type handlers
+
+macOS Compatibility (Phase 6 — Experimental):
+  + Darling built from source (cloned from github.com/darlinghq/darling)
+  + Installed at /opt/darling
+  + run-macos-app launcher at /usr/local/bin/run-macos-app
+  + .app bundle MIME type handler in Thunar
+  + macOS compatibility documentation at /usr/share/pavitra-os/docs/macos-compat.txt
+  + Build log at /var/log/pavitra-darling-build.log
+
+Applications (Phase 9):
+  + Firefox ESR (web browser)
+  + LibreOffice (office suite)
+  + GIMP (image editor)
+  + VLC (media player)
+  + Transmission (torrent client)
+  + GNOME Software with Flatpak plugin (app store)
+  + GParted (disk manager)
+  + htop, neofetch (system tools)
+  + Thunar, Mousepad, Ristretto, Evince, File Roller (desktop utilities)
+  + pavucontrol (audio mixer)
+
+Pavitra OS Custom Tools:
+  + Pavitra App Runner — GTK3 drag-and-drop universal application launcher
+  + Pavitra Welcome — first-login welcome screen explaining OS capabilities
+  + Two-panel XFCE4 layout: top bar + bottom dock with pinned apps
+  + GRUB dark theme (pavitra) with 5-second timeout and 5 boot entries
+
+System Hardening (Phase 8):
+  + UFW firewall: default deny incoming, allow outgoing
+  + unattended-upgrades: Debian security updates applied automatically
+  + zram-tools: 50% RAM as LZ4-compressed swap (zramswap service)
+  + thermald: Intel thermal management daemon
+  + schedutil CPU frequency governor set at boot
+  + Default user: pavitra / pavitra (in sudo, audio, video, plugdev, netdev)
+  + Hostname: pavitra-os, Timezone: UTC
+
+Documentation:
+  + /usr/share/pavitra-os/docs/README.txt
+  + /usr/share/pavitra-os/docs/getting-started.txt
+  + /usr/share/pavitra-os/docs/windows-compat.txt
+  + /usr/share/pavitra-os/docs/macos-compat.txt
+  + /usr/share/pavitra-os/docs/linux-apps.txt
+  + /usr/share/pavitra-os/docs/debian-packages.txt
+  + /usr/share/pavitra-os/docs/app-runner.txt
+  + /usr/share/pavitra-os/docs/desktop-guide.txt
+  + /usr/share/pavitra-os/docs/system-config.txt
+  + /usr/share/pavitra-os/docs/troubleshooting.txt
+  + /usr/share/pavitra-os/docs/faq.txt
+  + /usr/share/pavitra-os/docs/changelog.txt
+  + /usr/share/pavitra-os/LEGAL.txt
+
+================================================================================

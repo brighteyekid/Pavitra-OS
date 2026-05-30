@@ -1,0 +1,36 @@
+# Binaries and generated artifacts — never commit these
+*.iso
+*.iso.old
+*.qcow2
+*.img
+*.squashfs
+
+# Build output directories
+pavitra-os/pavitra-build/binary/
+pavitra-os/pavitra-build/chroot/
+pavitra-os/pavitra-build/cache/
+pavitra-os/pavitra-build/.build/
+pavitra-os/pavitra-build/chroot_apt/
+
+# Log files
+*.log
+*.log.*
+
+# Temporary extraction dirs
+/tmp/pavitra-squashfs-root/
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+
+# Node (website future deps)
+node_modules/

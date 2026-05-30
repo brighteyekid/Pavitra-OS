@@ -1,0 +1,4 @@
+// Pavitra OS build: do not abort if a repository has no Release file.
+// This prevents Ubuntu live-build's injected security.ubuntu.com entry from
+// failing the build when building a Debian target on an Ubuntu host.
+APT::Update::Error-Mode "any";
