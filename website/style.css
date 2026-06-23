@@ -1140,49 +1140,66 @@ html, body {
     left: 20px !important;
   }
 
+  /* --- Philosophy mobile: smaller logo, clear label zones --- */
   .phil-logo-center {
-    width: clamp(200px, 52vw, 300px);
-    height: clamp(200px, 52vw, 300px);
+    width: clamp(140px, 38vw, 200px);
+    height: clamp(140px, 38vw, 200px);
   }
 
   .phil-label {
     z-index: 3;
-    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9);
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 1);
   }
 
   .phil-desc {
-    display: none; /* Hide descriptions on mobile for pure geometry focus */
+    display: none;
   }
 
   .phil-word {
-    font-size: clamp(22px, 6vw, 38px);
+    font-size: clamp(20px, 5.5vw, 32px);
+    letter-spacing: 0.08em;
   }
 
+  /* PURE — top centre, below the section label (which is ~90px tall) */
   .phil-label--top {
-    top: 8%;
+    top: 14%;
     bottom: auto;
-    transform: translateX(-50%);
     left: 50%;
-  }
-  .phil-label--bottom {
-    bottom: 8%;
-    top: auto;
-    transform: translateX(-50%);
-    left: 50%;
-  }
-  .phil-label--left {
-    left: 4%;
     right: auto;
-    transform: translateY(-50%);
-    text-align: left;
-    align-items: flex-start;
+    transform: translateX(-50%);
+    align-items: center;
+    text-align: center;
   }
-  .phil-label--right {
-    right: 4%;
-    left: auto;
+
+  /* SOVEREIGN — bottom centre */
+  .phil-label--bottom {
+    bottom: 14%;
+    top: auto;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    align-items: center;
+    text-align: center;
+  }
+
+  /* OPEN — left edge, vertically centred */
+  .phil-label--left {
+    left: 5%;
+    right: auto;
+    top: 50%;
     transform: translateY(-50%);
-    text-align: right;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  /* UNIFIED — right edge, vertically centred */
+  .phil-label--right {
+    right: 5%;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
     align-items: flex-end;
+    text-align: right;
   }
 
   .phil-connector { display: none; }
