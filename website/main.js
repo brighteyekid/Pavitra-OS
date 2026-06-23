@@ -372,19 +372,19 @@ philTl.to(philPaths, {
 
 // Chapter 1: Top
 philTl.to('#phil-pure', { opacity: 1, y: 0, duration: 0.15, ease: "power2.out" }, 0.1)
-      .to('.phil-connector--top', { height: 40, duration: 0.15, ease: "power2.out" }, 0.1);
+      .to('.phil-connector--top', { height: 56, duration: 0.15, ease: "power2.out" }, 0.1);
 
 // Chapter 2: Right
 philTl.to('#phil-unified', { opacity: 1, x: 0, duration: 0.15, ease: "power2.out" }, 0.3)
-      .to('.phil-connector--right', { width: 40, duration: 0.15, ease: "power2.out" }, 0.3);
+      .to('.phil-connector--right', { width: 56, duration: 0.15, ease: "power2.out" }, 0.3);
 
 // Chapter 3: Bottom
 philTl.to('#phil-sovereign', { opacity: 1, y: 0, duration: 0.15, ease: "power2.out" }, 0.5)
-      .to('.phil-connector--bottom', { height: 40, duration: 0.15, ease: "power2.out" }, 0.5);
+      .to('.phil-connector--bottom', { height: 56, duration: 0.15, ease: "power2.out" }, 0.5);
 
 // Chapter 4: Left
 philTl.to('#phil-open', { opacity: 1, x: 0, duration: 0.15, ease: "power2.out" }, 0.7)
-      .to('.phil-connector--left', { width: 40, duration: 0.15, ease: "power2.out" }, 0.7);
+      .to('.phil-connector--left', { width: 56, duration: 0.15, ease: "power2.out" }, 0.7);
 
 // Chapter 5: Ethereal glow completion (no rotation)
 philTl.to('.phil-logo-center', {

@@ -420,6 +420,7 @@ html.lenis, html.lenis body {
 }
 
 .philosophy-sticky {
+  position: relative;
   width: 100%;
   height: 100vh;
   display: flex;
@@ -429,20 +430,21 @@ html.lenis, html.lenis body {
 }
 
 .philosophy-inner {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  max-width: 1000px;
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .phil-logo-center {
-  width: 400px;
-  height: 400px;
+  width: clamp(220px, 26vw, 380px);
+  height: clamp(220px, 26vw, 380px);
   z-index: 2;
   will-change: transform;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .phil-label {
@@ -450,15 +452,15 @@ html.lenis, html.lenis body {
   display: flex;
   flex-direction: column;
   opacity: 0;
-  z-index: 1;
+  z-index: 3;
 }
 
 .phil-word {
   font-family: var(--font-display);
-  font-size: 48px;
+  font-size: clamp(28px, 3.5vw, 52px);
   color: var(--accent);
   line-height: 1;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
 }
 
 .phil-desc {
@@ -467,67 +469,80 @@ html.lenis, html.lenis body {
   color: var(--secondary);
   margin-top: 8px;
   white-space: nowrap;
+  opacity: 0.7;
+  letter-spacing: 0.08em;
 }
 
 .phil-connector {
   position: absolute;
   background-color: var(--border);
+  opacity: 0.5;
 }
 
-/* Positioning the orbiting labels for perfect sacred geometry */
+/* ── Orbital label positions anchored to sticky container edges ── */
+
+/* TOP — centered horizontally, 12% from top */
 .phil-label--top {
-  bottom: 50%;
+  top: 12%;
   left: 50%;
-  transform: translate(-50%, -240px);
+  transform: translateX(-50%);
   align-items: center;
   text-align: center;
 }
 .phil-connector--top {
   width: 1px;
-  height: 0px; /* animated to 40px */
-  top: 100%;
+  height: 0px;
+  bottom: -56px;  /* hangs below the label */
   left: 50%;
+  transform: translateX(-50%);
 }
 
+/* RIGHT — right side, vertically centered */
 .phil-label--right {
-  left: 50%;
+  right: 6%;
   top: 50%;
-  transform: translate(240px, -50%);
-  align-items: flex-start;
+  transform: translateY(-50%);
+  align-items: flex-end;
+  text-align: right;
 }
 .phil-connector--right {
   height: 1px;
-  width: 0px; /* animated to 40px */
+  width: 0px;
+  top: 50%;
   right: 100%;
-  top: 24px;
+  margin-right: 12px;
 }
 
+/* BOTTOM — centered horizontally, 12% from bottom */
 .phil-label--bottom {
-  top: 50%;
+  bottom: 12%;
   left: 50%;
-  transform: translate(-50%, 240px);
+  transform: translateX(-50%);
   align-items: center;
   text-align: center;
 }
 .phil-connector--bottom {
   width: 1px;
-  height: 0px; /* animated to 40px */
-  bottom: 100%;
+  height: 0px;
+  top: -56px; /* hangs above the label */
   left: 50%;
+  transform: translateX(-50%);
 }
 
+/* LEFT — left side, vertically centered */
 .phil-label--left {
-  right: 50%;
+  left: 6%;
   top: 50%;
-  transform: translate(-240px, -50%);
-  align-items: flex-end;
-  text-align: right;
+  transform: translateY(-50%);
+  align-items: flex-start;
+  text-align: left;
 }
 .phil-connector--left {
   height: 1px;
-  width: 0px; /* animated to 40px */
+  width: 0px;
+  top: 50%;
   left: 100%;
-  top: 24px;
+  margin-left: 12px;
 }
 
 /* ============================================================ */
@@ -1126,13 +1141,13 @@ html, body {
   }
 
   .phil-logo-center {
-    width: 60vw;
-    height: 60vw;
+    width: clamp(200px, 52vw, 300px);
+    height: clamp(200px, 52vw, 300px);
   }
 
   .phil-label {
     z-index: 3;
-    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.8);
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9);
   }
 
   .phil-desc {
@@ -1140,14 +1155,36 @@ html, body {
   }
 
   .phil-word {
-    font-size: clamp(20px, 5vw, 40px);
+    font-size: clamp(22px, 6vw, 38px);
   }
 
-  .phil-label--top { top: 10%; }
-  .phil-label--bottom { bottom: 10%; }
-  .phil-label--left { left: 0%; transform: translateY(-50%) translateX(20%); text-align: left; align-items: flex-start; }
-  .phil-label--right { right: 0%; transform: translateY(-50%) translateX(-20%); text-align: right; align-items: flex-end; }
-  
+  .phil-label--top {
+    top: 8%;
+    bottom: auto;
+    transform: translateX(-50%);
+    left: 50%;
+  }
+  .phil-label--bottom {
+    bottom: 8%;
+    top: auto;
+    transform: translateX(-50%);
+    left: 50%;
+  }
+  .phil-label--left {
+    left: 4%;
+    right: auto;
+    transform: translateY(-50%);
+    text-align: left;
+    align-items: flex-start;
+  }
+  .phil-label--right {
+    right: 4%;
+    left: auto;
+    transform: translateY(-50%);
+    text-align: right;
+    align-items: flex-end;
+  }
+
   .phil-connector { display: none; }
 
   .layer-card {
